@@ -10,6 +10,9 @@ struct WordTreeNode {
     /// The ID of this node (index in nodes array)
     id: usize,
 
+    /// The ID of this node's parent if not root.
+    parent_id: Option<usize>,
+
     /// The letter contained in this node
     val: u8,
 
@@ -32,10 +35,11 @@ struct WordTree {
 
 impl WordTree {
     /// Add a node node to the tree, return its id
-    fn add_node(&mut self, val: u8, terminus: bool) -> usize {
+    fn add_node(&mut self, parent_id: Option<usize>, val: u8, terminus: bool) -> usize {
         let id = self.nodes.len();
         self.nodes.push(WordTreeNode {
             id,
+            parent_id,
             val,
             terminus,
             next: HashMap::new(),
@@ -48,7 +52,7 @@ impl WordTree {
         if let Some(head_id) = self.head_ids.get(&chr) {
             return *head_id;
         }
-        let id = self.add_node(chr, terminus);
+        let id = self.add_node(None, chr, terminus);
         self.head_ids.insert(chr, id);
         id
     }
@@ -58,7 +62,7 @@ impl WordTree {
         if let Some(child_id) = self.nodes[node_id].next.get(&val) {
             return *child_id;
         }
-        let child_id = self.add_node(val, terminus);
+        let child_id = self.add_node(Some(node_id), val, terminus);
         self.nodes[node_id].next.insert(val, child_id);
         child_id
     }
@@ -95,6 +99,16 @@ impl WordTree {
             out.append(&mut self.list_words_inner(*head_id, &Word::empty()))
         }
         out
+    }
+
+    /// Given a node id, reconstruct the word that led to it.
+    fn recover_word(&self, node_id: usize) -> Word {
+        let node = &self.nodes[node_id];
+        let prefix = match node.parent_id {
+            Some(parent_id) => self.recover_word(parent_id),
+            None => Word::empty(),
+        };
+        prefix.with_char(node.val)
     }
 }
 
