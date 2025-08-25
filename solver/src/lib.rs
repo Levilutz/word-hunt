@@ -205,6 +205,15 @@ impl CharGraph {
         }
         graph
     }
+
+    /// Get the IDs of all nodes with the given chr.
+    fn nodes_by_char(&self, chr: u8) -> Vec<usize> {
+        self.nodes
+            .iter()
+            .filter(|node| node.val == chr)
+            .map(|node| node.id)
+            .collect()
+    }
 }
 
 fn append_char(word: &[u8], chr: u8) -> Vec<u8> {

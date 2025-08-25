@@ -25,9 +25,9 @@ impl Word {
     }
 
     /// Produce a new word that's a copy of this one, with the given character added.
-    pub fn with_char(&self, char: u8) -> Self {
+    pub fn with_char(&self, chr: u8) -> Self {
         let mut new_word = self.0.clone();
-        new_word.push(char);
+        new_word.push(chr);
         Self(new_word)
     }
 
