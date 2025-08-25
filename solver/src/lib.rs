@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// A single node in a word tree, identifying a single traversible letter
 #[derive(Debug, Clone)]
@@ -94,6 +94,101 @@ impl WordTree {
     }
 }
 
+/// A node in the char graph, representing a single grid tile.
+#[derive(Debug, Clone, Default)]
+struct CharGraphNode {
+    /// The ID of this node (index in the nodes array)
+    id: usize,
+
+    /// The letter contained in this node
+    val: u8,
+
+    /// The (y, x) coordinates of this tile (only useful to consumer)
+    coords: (usize, usize),
+
+    /// A map of the next nodes, identified by their contained value
+    next: HashMap<u8, HashSet<usize>>,
+}
+
+/// An undirected dense graph of characters, representing the grid.
+#[derive(Debug, Clone, Default)]
+struct CharGraph {
+    nodes: Vec<CharGraphNode>,
+
+    /// Given row ind and col ind, get node id
+    nodes_by_coord: HashMap<usize, HashMap<usize, usize>>,
+}
+
+impl CharGraph {
+    /// Add a node to the graph, return its id.
+    fn add_node(&mut self, val: u8, coords: (usize, usize)) -> usize {
+        let id = self.nodes.len();
+        self.nodes.push(CharGraphNode {
+            id,
+            val,
+            coords,
+            next: HashMap::new(),
+        });
+        let existed = self
+            .nodes_by_coord
+            .entry(coords.0)
+            .or_default()
+            .insert(coords.1, id)
+            .is_some();
+        if existed {
+            panic!("Duplicate insert of coordinates {:?}", coords);
+        }
+        id
+    }
+
+    /// Add an undirected edge between two nodes. No-op if edge already exixsts.
+    fn add_edge(&mut self, node_id_a: usize, node_id_b: usize) {
+        let val_a = self.nodes[node_id_a].val;
+        let val_b = self.nodes[node_id_b].val;
+        self.nodes[node_id_a]
+            .next
+            .entry(val_b)
+            .or_default()
+            .insert(node_id_b);
+        self.nodes[node_id_b]
+            .next
+            .entry(val_a)
+            .or_default()
+            .insert(node_id_a);
+    }
+
+    /// Build a char graph for a simple 4x4 grid.
+    fn from_simple_grid(chars: &[[u8; 4]; 4]) -> Self {
+        let mut graph = Self::default();
+        for y in 0..4 {
+            for x in 0..4 {
+                graph.add_node(chars[y][x], (y, x));
+            }
+        }
+        for y in 0..4i8 {
+            for x in 0..4i8 {
+                for dy in -1..=1i8 {
+                    for dx in -1..=1i8 {
+                        if dy == 0 && dx == 0 {
+                            continue;
+                        }
+                        let neighbor_y = y + dy;
+                        let neighbor_x = x + dx;
+                        if neighbor_y < 0 || neighbor_y >= 4 || neighbor_x < 0 || neighbor_x >= 4 {
+                            continue;
+                        }
+                        let node_id = graph.nodes_by_coord[&(y as usize)][&(x as usize)];
+                        let neighbor_id =
+                            graph.nodes_by_coord[&(neighbor_y as usize)][&(neighbor_x as usize)];
+                        graph.add_edge(node_id, neighbor_id);
+                    }
+                }
+            }
+        }
+        graph
+    }
+}
+
 fn append_char(word: &[u8], chr: u8) -> Vec<u8> {
     let mut out = word.to_vec();
     out.push(chr);
@@ -139,5 +234,34 @@ mod tests {
         let expected: HashSet<String> = words.into_iter().collect();
         let actual: HashSet<String> = tree_words.into_iter().collect();
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_char_graph_grid_num_neighbors() {
+        let graph = CharGraph::from_simple_grid(&[
+            [0, 1, 2, 3],
+            [4, 5, 6, 7],
+            [8, 9, 10, 11],
+            [12, 13, 14, 15],
+        ]);
+        for y in 0..4 {
+            for x in 0..4 {
+                let y_edge = y == 0 || y == 3;
+                let x_edge = x == 0 || x == 3;
+                let node_id = graph.nodes_by_coord[&y][&x];
+                let num_neighbors: usize = graph.nodes[node_id]
+                    .next
+                    .values()
+                    .map(|set| set.len())
+                    .sum();
+                if y_edge && x_edge {
+                    assert_eq!(num_neighbors, 3);
+                } else if y_edge || x_edge {
+                    assert_eq!(num_neighbors, 5);
+                } else {
+                    assert_eq!(num_neighbors, 8);
+                }
+            }
+        }
     }
 }
