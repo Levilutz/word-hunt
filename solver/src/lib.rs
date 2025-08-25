@@ -1,4 +1,8 @@
+pub mod word;
+
 use std::collections::{HashMap, HashSet};
+
+use crate::word::Word;
 
 /// A single node in a word tree, identifying a single traversible letter
 #[derive(Debug, Clone)]
@@ -60,19 +64,19 @@ impl WordTree {
     }
 
     /// Add a new word to the dictionary
-    fn add_word(&mut self, word: &[u8]) {
+    fn add_word(&mut self, word: &Word) {
         if word.len() == 0 {
             return;
         }
-        let mut cur_id = self.ensure_head(word[0], word.len() == 1);
-        for (i, chr) in word[1..].iter().enumerate() {
+        let mut cur_id = self.ensure_head(word.chars()[0], word.len() == 1);
+        for (i, chr) in word.chars()[1..].iter().enumerate() {
             cur_id = self.ensure_child(cur_id, *chr, i == word.len() - 2);
         }
     }
 
-    fn list_words_inner(&self, node_id: usize, prefix: &[u8]) -> Vec<Vec<u8>> {
+    fn list_words_inner(&self, node_id: usize, prefix: &Word) -> Vec<Word> {
         let node = &self.nodes[node_id];
-        let new_prefix = append_char(prefix, node.val);
+        let new_prefix = prefix.with_char(node.val);
 
         let mut out = vec![];
         if node.terminus {
@@ -85,10 +89,10 @@ impl WordTree {
     }
 
     /// Get all words in the dictionary
-    fn list_words(&self) -> Vec<Vec<u8>> {
+    fn list_words(&self) -> Vec<Word> {
         let mut out = vec![];
         for (_, head_id) in &self.head_ids {
-            out.append(&mut self.list_words_inner(*head_id, &vec![]))
+            out.append(&mut self.list_words_inner(*head_id, &Word::empty()))
         }
         out
     }
@@ -225,12 +229,15 @@ mod tests {
 
     #[test]
     fn test_word_tree() {
-        let words = to_owned(&["foo", "bar", "baz", "foooz", "barz", "buz"]);
+        let words = to_owned(&["FOO", "BAR", "BAZ", "FOOOZ", "BARZ", "BUZ"]);
         let mut tree = WordTree::default();
         for word in &words {
-            tree.add_word(&word_from_str(word));
+            tree.add_word(&Word::from_str(word));
         }
-        let tree_words = words_to_strs(&tree.list_words());
+        let tree_words = tree
+            .list_words()
+            .into_iter()
+            .map(|word| format!("{}", word));
         let expected: HashSet<String> = words.into_iter().collect();
         let actual: HashSet<String> = tree_words.into_iter().collect();
         assert_eq!(expected, actual);
