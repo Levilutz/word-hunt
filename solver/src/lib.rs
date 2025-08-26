@@ -216,6 +216,81 @@ impl CharGraph {
     }
 }
 
+fn solve_inner(
+    tree: &WordTree,
+    graph: &CharGraph,
+    tree_node_id: usize,
+    graph_paths: Vec<Vec<usize>>,
+) -> HashMap<Word, Vec<Vec<(usize, usize)>>> {
+    if graph_paths.len() == 0 {
+        return HashMap::new();
+    }
+    let mut out = HashMap::new();
+    let tree_node = &tree.nodes[tree_node_id];
+
+    // Check if this node should be output
+    if tree_node.terminus {
+        let word = tree.recover_word(tree_node_id);
+        let path_coords: Vec<Vec<(usize, usize)>> = graph_paths
+            .iter()
+            .map(|path| {
+                path.iter()
+                    .map(|graph_node_id| graph.nodes[*graph_node_id].coords)
+                    .collect()
+            })
+            .collect();
+        out.insert(word, path_coords);
+    }
+
+    // Descend for every possible next char
+    for (next_chr, next_tree_node_id) in &tree_node.next {
+        // Construct the set of new graph paths that can reach this tree node
+        let mut new_paths: Vec<Vec<usize>> = vec![];
+        for path in &graph_paths {
+            let tail_id = path[path.len() - 1];
+            let tail_graph_node = &graph.nodes[tail_id];
+            let successors = match tail_graph_node.next.get(next_chr) {
+                Some(successors) => successors,
+                None => continue,
+            };
+            for successor in successors {
+                if path.contains(successor) {
+                    continue;
+                }
+                let mut new_path = path.clone();
+                new_path.push(*successor);
+                new_paths.push(new_path);
+            }
+        }
+        if new_paths.len() == 0 {
+            continue;
+        }
+
+        // Descend to exploring this child node
+        out.extend(solve_inner(&tree, &graph, *next_tree_node_id, new_paths));
+    }
+    out
+}
+
+/// Given a dictionary represented by a word tree, and a grid represented by a graph,
+/// find all possible words in the graph. Returns mapping from word to a list of paths
+/// producing it.
+fn solve(tree: &WordTree, graph: &CharGraph) -> HashMap<Word, Vec<Vec<(usize, usize)>>> {
+    let mut out = HashMap::new();
+    for (head_char, head_tree_node_id) in &tree.head_ids {
+        let graph_node_ids = graph.nodes_by_char(*head_char);
+        if graph_node_ids.len() == 0 {
+            continue;
+        }
+        let paths: Vec<Vec<usize>> = graph_node_ids
+            .iter()
+            .map(|graph_node_id| vec![*graph_node_id])
+            .collect();
+        out.extend(solve_inner(&tree, &graph, *head_tree_node_id, paths));
+    }
+    out
+}
+
 fn append_char(word: &[u8], chr: u8) -> Vec<u8> {
     let mut out = word.to_vec();
     out.push(chr);
@@ -291,6 +366,38 @@ mod tests {
                 } else {
                     assert_eq!(num_neighbors, 8);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn test_solve() {
+        let words = to_owned(&[
+            "CAT", "COAT", "WORD", "WORDS", "ALPHA", "BETA", "NO", "NOD", "NODS", "FO", "AA",
+        ]);
+        let mut tree = WordTree::default();
+        for word in &words {
+            tree.add_word(&Word::from_str(word));
+        }
+        let graph = CharGraph::from_simple_grid(&[
+            [2, 0, 19, 3],
+            [22, 14, 5, 14],
+            [8, 17, 3, 6],
+            [13, 14, 0, 18],
+        ]);
+        let out = solve(&tree, &graph);
+        let found_words: HashSet<Word> = out.keys().cloned().collect();
+        let expected_words: HashSet<Word> =
+            vec!["CAT", "COAT", "WORD", "WORDS", "NO", "NOD", "NODS", "FO"]
+                .into_iter()
+                .map(|raw| Word::from_str(raw))
+                .collect();
+        assert_eq!(found_words, expected_words);
+        for (word, paths) in &out {
+            if word == &Word::from_str("FO") {
+                assert_eq!(paths.len(), 2);
+            } else {
+                assert_eq!(paths.len(), 1);
             }
         }
     }

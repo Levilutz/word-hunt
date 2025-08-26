@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
 /// A simpler representation of a word so we don't have to worry abt unicode etc.
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Word(Vec<u8>);
 
 impl Word {
