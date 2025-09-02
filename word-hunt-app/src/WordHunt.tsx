@@ -80,7 +80,7 @@ export default function WordHunt({
 
 	const onMouseDown = useCallback(
 		(ev: MouseEvent) => {
-			onPathStart(0, 0);
+			onPathStart(ev.x, ev.y);
 		},
 		[onPathStart],
 	);
