@@ -127,6 +127,9 @@ export default function WordHunt({
 			0.1,
 		);
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.font = `${heightTilePx * 0.8}px Arial`;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
 		for (let y = 0; y < gridHeight; y++) {
 			for (let x = 0; x < gridWidth; x++) {
 				const tile = grid[y]?.[x];
@@ -135,6 +138,12 @@ export default function WordHunt({
 					const startX = (widthTilePx + widthSpacePx) * x;
 					const startY = (heightTilePx + heightSpacePx) * y;
 					ctx.fillRect(startX, startY, widthTilePx, heightTilePx);
+					ctx.fillStyle = "black";
+					ctx.fillText(
+						tile.contents,
+						startX + widthTilePx / 2,
+						startY + heightTilePx / 2,
+					);
 				}
 			}
 		}

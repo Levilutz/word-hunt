@@ -3,8 +3,8 @@ import WordHunt from "./WordHunt";
 function App() {
 	return (
 		<WordHunt
-			width={135}
-			height={135}
+			width={405}
+			height={405}
 			grid={[
 				[
 					{ contents: "A", highlight: "none" },
