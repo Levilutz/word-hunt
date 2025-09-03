@@ -2,7 +2,7 @@ import WordHuntTile from "./WordHuntTile";
 
 function App() {
 	return (
-		<WordHuntTile contents="a" />
+		<WordHuntTile contents="A" />
 		// <WordHunt
 		// 	width={405}
 		// 	height={405}
