@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import hardwood from "./assets/hardwood.jpg";
 
 export type WordHuntTileProps = {
+	x: number;
+	y: number;
 	contents: string;
 };
 
-export default function WordHuntTile({ contents }: WordHuntTileProps) {
+export default function WordHuntTile({ x, y, contents }: WordHuntTileProps) {
 	useExtend({ Sprite, Graphics, Text, Container });
 	const maskRef = useRef<Graphics>(null);
 	const [hardwoodTexture, setHardwoodTexture] = useState(Texture.EMPTY);
@@ -24,8 +26,8 @@ export default function WordHuntTile({ contents }: WordHuntTileProps) {
 
 	return (
 		<pixiContainer
-			x={9}
-			y={9}
+			x={x}
+			y={y}
 			width={90}
 			height={90}
 			eventMode="static"

@@ -15,7 +15,7 @@ export type WordHuntGameProps = {
 export default function WordHuntGame({
 	width,
 	height,
-	// grid,
+	grid,
 }: WordHuntGameProps) {
 	useExtend({ TilingSprite });
 	const [textureGrass, setTextureGrass] = useState(Texture.EMPTY);
@@ -25,6 +25,8 @@ export default function WordHuntGame({
 			Assets.load(grass).then((res) => setTextureGrass(res));
 		}
 	}, [textureGrass]);
+
+	const { gridWidth } = gridSize(grid);
 
 	return (
 		<Application width={width} height={height}>
@@ -36,7 +38,29 @@ export default function WordHuntGame({
 				tileScale={{ x: 0.1, y: 0.1 }}
 				texture={textureGrass}
 			/>
-			<WordHuntTile contents="A" />
+			{grid.flatMap((row, y) =>
+				row.map((contents, x) =>
+					contents !== null ? (
+						<WordHuntTile
+							// biome-ignore lint/suspicious/noArrayIndexKey: Order is stable
+							key={y * gridWidth + x * 1}
+							x={99 * x + 9}
+							y={99 * y + 9}
+							contents={contents}
+						/>
+					) : null,
+				),
+			)}
 		</Application>
 	);
+}
+
+function gridSize(grid: (string | null)[][]): {
+	gridWidth: number;
+	gridHeight: number;
+} {
+	return {
+		gridWidth: grid.length > 0 ? Math.max(...grid.map((row) => row.length)) : 0,
+		gridHeight: grid.length,
+	};
 }
