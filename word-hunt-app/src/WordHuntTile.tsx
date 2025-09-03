@@ -32,10 +32,13 @@ export default function WordHuntTile({ x, y, contents }: WordHuntTileProps) {
 			height={90}
 			eventMode="static"
 			cursor="pointer"
-			onMouseEnter={() => setButtonHover(true)}
-			onMouseLeave={() => setButtonHover(false)}
-			onMouseDown={() => setButtonClick(true)}
-			onMouseUp={() => setButtonClick(false)}
+			onPointerEnter={() => setButtonHover(true)}
+			onPointerLeave={() => {
+				setButtonHover(false);
+				setButtonClick(false);
+			}}
+			onPointerDown={() => setButtonClick(true)}
+			onPointerUp={() => setButtonClick(false)}
 			alpha={buttonClick ? 0.4 : buttonHover ? 0.8 : 1}
 			mask={maskRef?.current}
 		>
