@@ -5,9 +5,12 @@ import { Assets, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 import hardwood from "./assets/hardwood.jpg";
 
+const borderRadius = 0.25;
+
 export type WordHuntTileProps = {
 	x: number;
 	y: number;
+	tileSize: number;
 	contents: string;
 	showHover: boolean;
 };
@@ -15,6 +18,7 @@ export type WordHuntTileProps = {
 export default function WordHuntTile({
 	x,
 	y,
+	tileSize,
 	contents,
 	showHover,
 }: WordHuntTileProps) {
@@ -34,8 +38,8 @@ export default function WordHuntTile({
 		<pixiContainer
 			x={x}
 			y={y}
-			width={90}
-			height={90}
+			width={tileSize}
+			height={tileSize}
 			eventMode="static"
 			cursor="pointer"
 			onPointerEnter={() => setButtonHover(true)}
@@ -51,29 +55,31 @@ export default function WordHuntTile({
 			<pixiGraphics
 				ref={maskRef}
 				draw={(graphics) => {
-					graphics.roundRect(0, 0, 90, 90, 9).fill({ color: 0xffffff });
+					graphics
+						.roundRect(0, 0, tileSize, tileSize, tileSize * borderRadius)
+						.fill({ color: 0xffffff });
 				}}
 			/>
 			<pixiSprite
 				x={0}
 				y={0}
-				width={90}
-				height={90}
+				width={tileSize}
+				height={tileSize}
 				texture={hardwoodTexture}
 			/>
 			<pixiText
 				text={contents}
 				anchor={0.5}
-				x={45}
-				y={45}
-				style={{ fill: "white", fontSize: 90 * 0.8 }}
+				x={tileSize * 0.5}
+				y={tileSize * 0.5}
+				style={{ fill: "white", fontSize: tileSize * 0.8 }}
 			/>
 			{showHover && buttonHover && (
 				<pixiGraphics
 					draw={(graphics) => {
 						graphics
-							.roundRect(0, 0, 90, 90, 9)
-							.stroke({ width: 5, color: 0xfff1b3 });
+							.roundRect(0, 0, tileSize, tileSize, tileSize * borderRadius)
+							.stroke({ width: 6, color: 0xfff1b3 });
 					}}
 				/>
 			)}

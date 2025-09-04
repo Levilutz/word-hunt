@@ -1,17 +1,18 @@
+import { Application } from "@pixi/react";
 import WordHuntGame from "./WordHuntGame";
 
 function App() {
 	return (
-		<WordHuntGame
-			width={405}
-			height={405}
-			grid={[
-				["A", "B", "C", "D"],
-				["E", "F", "G", "H"],
-				["I", "J", "K", "L"],
-				["M", "N", "O", "P"],
-			]}
-		/>
+		<Application resizeTo={window} antialias>
+			<WordHuntGame
+				grid={[
+					["A", "B", "C", "D"],
+					["E", "F", "G", "H"],
+					["I", "J", "K", "L"],
+					["M", "N", "O", "P"],
+				]}
+			/>
+		</Application>
 		// <WordHunt
 		// 	width={405}
 		// 	height={405}
