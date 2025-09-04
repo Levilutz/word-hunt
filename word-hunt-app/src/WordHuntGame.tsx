@@ -13,7 +13,10 @@ export type WordHuntGameProps = {
 export default function WordHuntGame({ grid }: WordHuntGameProps) {
 	useExtend({ TilingSprite });
 	const [textureGrass, setTextureGrass] = useState(Texture.EMPTY);
-	const [appSize, setAppSize] = useState({ width: 100, height: 100 });
+	const [appSize, setAppSize] = useState<{
+		width: number;
+		height: number;
+	} | null>(null);
 	const { app } = useApplication();
 
 	useEffect(() => {
@@ -32,6 +35,10 @@ export default function WordHuntGame({ grid }: WordHuntGameProps) {
 			app.renderer.removeListener("resize", onResize);
 		};
 	}, [app]);
+
+	if (appSize === null) {
+		return null;
+	}
 
 	const { gridWidth } = gridSize(grid);
 	const usedWidth = Math.min(appSize.width, appSize.height) * 0.75;
