@@ -47,6 +47,7 @@ export default function WordHuntGame({
 							x={99 * x + 9}
 							y={99 * y + 9}
 							contents={contents}
+							showHover
 						/>
 					) : null,
 				),

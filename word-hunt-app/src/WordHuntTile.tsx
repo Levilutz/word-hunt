@@ -9,9 +9,15 @@ export type WordHuntTileProps = {
 	x: number;
 	y: number;
 	contents: string;
+	showHover: boolean;
 };
 
-export default function WordHuntTile({ x, y, contents }: WordHuntTileProps) {
+export default function WordHuntTile({
+	x,
+	y,
+	contents,
+	showHover,
+}: WordHuntTileProps) {
 	useExtend({ Sprite, Graphics, Text, Container });
 	const maskRef = useRef<Graphics>(null);
 	const [hardwoodTexture, setHardwoodTexture] = useState(Texture.EMPTY);
@@ -39,7 +45,7 @@ export default function WordHuntTile({ x, y, contents }: WordHuntTileProps) {
 			}}
 			onPointerDown={() => setButtonClick(true)}
 			onPointerUp={() => setButtonClick(false)}
-			alpha={buttonClick ? 0.4 : buttonHover ? 0.8 : 1}
+			alpha={buttonClick ? 0.8 : 1}
 			mask={maskRef?.current}
 		>
 			<pixiGraphics
@@ -62,6 +68,15 @@ export default function WordHuntTile({ x, y, contents }: WordHuntTileProps) {
 				y={45}
 				style={{ fill: "white", fontSize: 90 * 0.8 }}
 			/>
+			{showHover && buttonHover && (
+				<pixiGraphics
+					draw={(graphics) => {
+						graphics
+							.roundRect(0, 0, 90, 90, 9)
+							.stroke({ width: 5, color: 0xfff1b3 });
+					}}
+				/>
+			)}
 		</pixiContainer>
 	);
 }
