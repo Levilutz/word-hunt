@@ -13,16 +13,13 @@ export default function GameContainer({ grid }: GameContainerProps) {
 
 	const { app } = useApplication();
 	const [canvasSize, setCanvasSize] = useState({
-		width: app.renderer.canvas.width,
-		height: app.renderer.canvas.height,
+		width: app.renderer?.canvas?.width ?? 100,
+		height: app.renderer?.canvas?.height ?? 100,
 	});
 
 	useEffect(() => {
-		const onResize = () => {
-			setCanvasSize({
-				width: app.renderer.canvas.width,
-				height: app.renderer.canvas.height,
-			});
+		const onResize = (width: number, height: number) => {
+			setCanvasSize({ width, height });
 		};
 		app.renderer.on("resize", onResize);
 		return () => {
