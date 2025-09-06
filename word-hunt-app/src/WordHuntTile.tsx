@@ -1,7 +1,15 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: HTML5 Canvas Interactivity */
 
 import { useExtend } from "@pixi/react";
-import { Assets, Container, Graphics, Sprite, Text, Texture } from "pixi.js";
+import {
+	Assets,
+	Container,
+	type FederatedPointerEvent,
+	Graphics,
+	Sprite,
+	Text,
+	Texture,
+} from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 import hardwood from "./assets/hardwood.jpg";
 
@@ -13,6 +21,8 @@ export type WordHuntTileProps = {
 	tileSize: number;
 	contents: string;
 	showHover: boolean;
+	onClick?: () => void;
+	onEnterClose?: () => void;
 };
 
 export default function WordHuntTile({
@@ -21,6 +31,8 @@ export default function WordHuntTile({
 	tileSize,
 	contents,
 	showHover,
+	onClick,
+	onEnterClose,
 }: WordHuntTileProps) {
 	useExtend({ Sprite, Graphics, Text, Container });
 	const maskRef = useRef<Graphics>(null);
@@ -47,8 +59,21 @@ export default function WordHuntTile({
 				setButtonHover(false);
 				setButtonClick(false);
 			}}
-			onPointerDown={() => setButtonClick(true)}
+			onPointerDown={() => {
+				setButtonClick(true);
+				onClick?.();
+			}}
 			onPointerUp={() => setButtonClick(false)}
+			onPointerMove={({ global }: FederatedPointerEvent) => {
+				const { x: globalX, y: globalY } = global;
+				const r = tileSize * 0.5;
+				const xDist = Math.abs(x + r - globalX);
+				const yDist = Math.abs(y + r - globalY);
+				const dist2 = xDist * xDist + yDist * yDist;
+				if (dist2 <= r * r) {
+					onEnterClose?.();
+				}
+			}}
 			alpha={buttonClick ? 0.8 : 1}
 			mask={maskRef?.current}
 		>
