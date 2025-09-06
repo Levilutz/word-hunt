@@ -28,7 +28,7 @@ export default function WordHuntGame({
 
 	const { gridWidth } = gridSize(grid);
 	const usedWidth = Math.min(width, height) * 0.75;
-	const { tilePx, spacePx } = getTileAndSpacePx(usedWidth, gridWidth, 0.15);
+	const { tilePx, spacePx } = getTileAndSpacePx(usedWidth, gridWidth, 0.1);
 	const hPad = (width - usedWidth) * 0.5;
 	const vPad = (height - usedWidth) * 0.5;
 
