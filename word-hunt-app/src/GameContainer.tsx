@@ -1,6 +1,7 @@
 import { useApplication, useExtend } from "@pixi/react";
 import { Text } from "pixi.js";
 import { useEffect, useState } from "react";
+import PointerCurve from "./PointerCurve";
 import WordHuntGame from "./WordHuntGame";
 
 export type GameContainerProps = {
@@ -28,20 +29,23 @@ export default function GameContainer({ grid }: GameContainerProps) {
 	}, [app]);
 
 	return (
-		<WordHuntGame
-			width={canvasSize.width}
-			height={canvasSize.height}
-			grid={grid}
-			checkWord={(word) => {
-				if (word.length > 3) {
-					return "valid";
-				} else if (word.length === 3) {
-					return "used";
-				} else {
-					return "invalid";
-				}
-			}}
-			onWordSubmit={(word) => console.log(word)}
-		/>
+		<>
+			{/* <WordHuntGame
+				width={canvasSize.width}
+				height={canvasSize.height}
+				grid={grid}
+				checkWord={(word) => {
+					if (word.length > 3) {
+						return "valid";
+					} else if (word.length === 3) {
+						return "used";
+					} else {
+						return "invalid";
+					}
+				}}
+				onWordSubmit={(word) => console.log(word)}
+			/> */}
+			<PointerCurve width={canvasSize.width} height={canvasSize.height} />
+		</>
 	);
 }

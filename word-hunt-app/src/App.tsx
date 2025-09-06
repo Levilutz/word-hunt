@@ -1,6 +1,6 @@
 import { Application } from "@pixi/react";
-import GameContainer from "./GameContainer";
 import { useEffect, useState } from "react";
+import GameContainer from "./GameContainer";
 
 function App() {
 	// Let the application exist for a few frames before starting the game
@@ -9,7 +9,7 @@ function App() {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setShowGame(true);
-		}, 5);
+		}, 50);
 		return () => clearTimeout(timer);
 	}, []);
 
