@@ -1,23 +1,24 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: HTML5 Canvas Interactivity */
 
-import { useApplication, useExtend } from "@pixi/react";
+import { useExtend } from "@pixi/react";
 import { Assets, Texture, TilingSprite } from "pixi.js";
 import { useEffect, useState } from "react";
 import grass from "./assets/grass.png";
 import WordHuntTile from "./WordHuntTile";
 
 export type WordHuntGameProps = {
+	width: number;
+	height: number;
 	grid: (string | null)[][];
 };
 
-export default function WordHuntGame({ grid }: WordHuntGameProps) {
+export default function WordHuntGame({
+	width,
+	height,
+	grid,
+}: WordHuntGameProps) {
 	useExtend({ TilingSprite });
 	const [textureGrass, setTextureGrass] = useState(Texture.EMPTY);
-	const [appSize, setAppSize] = useState<{
-		width: number;
-		height: number;
-	} | null>(null);
-	const { app } = useApplication();
 
 	useEffect(() => {
 		if (textureGrass === Texture.EMPTY) {
@@ -25,34 +26,19 @@ export default function WordHuntGame({ grid }: WordHuntGameProps) {
 		}
 	}, [textureGrass]);
 
-	useEffect(() => {
-		const onResize = (width: number, height: number) => {
-			setAppSize({ width, height });
-		};
-		onResize(app.renderer.screen.width, app.renderer.screen.height);
-		app.renderer.on("resize", onResize);
-		return () => {
-			app.renderer.removeListener("resize", onResize);
-		};
-	}, [app]);
-
-	if (appSize === null) {
-		return null;
-	}
-
 	const { gridWidth } = gridSize(grid);
-	const usedWidth = Math.min(appSize.width, appSize.height) * 0.75;
+	const usedWidth = Math.min(width, height) * 0.75;
 	const { tilePx, spacePx } = getTileAndSpacePx(usedWidth, gridWidth, 0.15);
-	const hPad = (appSize.width - usedWidth) * 0.5;
-	const vPad = (appSize.height - usedWidth) * 0.5;
+	const hPad = (width - usedWidth) * 0.5;
+	const vPad = (height - usedWidth) * 0.5;
 
 	return (
 		<>
 			<pixiTilingSprite
 				x={0}
 				y={0}
-				width={appSize.width}
-				height={appSize.height}
+				width={width}
+				height={height}
 				tileScale={{ x: 0.1, y: 0.1 }}
 				texture={textureGrass}
 			/>

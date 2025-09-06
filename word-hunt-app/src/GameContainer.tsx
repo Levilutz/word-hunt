@@ -1,9 +1,14 @@
 import { useApplication, useExtend } from "@pixi/react";
 import { Text } from "pixi.js";
 import { useEffect, useState } from "react";
+import WordHuntGame from "./WordHuntGame";
+
+export type GameContainerProps = {
+	grid: (string | null)[][];
+};
 
 /** Container to manage arranging and sizing game components based on canvas size. */
-export default function GameContainer() {
+export default function GameContainer({ grid }: GameContainerProps) {
 	useExtend({ Text });
 
 	const { app } = useApplication();
@@ -26,12 +31,10 @@ export default function GameContainer() {
 	}, [app]);
 
 	return (
-		<pixiText
-			text={`${canvasSize.width} x ${canvasSize.height}`}
-			anchor={0.5}
-			x={50}
-			y={50}
-			style={{ fill: "white", fontSize: 24 }}
+		<WordHuntGame
+			width={canvasSize.width}
+			height={canvasSize.height}
+			grid={grid}
 		/>
 	);
 }
