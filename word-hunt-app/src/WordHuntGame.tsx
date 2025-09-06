@@ -110,6 +110,33 @@ export default function WordHuntGame({
 					) : null,
 				),
 			)}
+			{curPath !== null && curPath.length > 0 && (
+				<pixiGraphics
+					draw={(graphics) => {
+						const color =
+							wordStatus === "valid" || wordStatus === "used"
+								? 0xffffff
+								: 0xff0000;
+						for (let i = 0; i < curPath.length; i++) {
+							const displayX =
+								(tilePx + spacePx) * (curPath[i].x + 0.5) + spacePx + hPad;
+							const displayY =
+								(tilePx + spacePx) * (curPath[i].y + 0.5) + spacePx + vPad;
+							if (i > 0) {
+								graphics.lineTo(displayX, displayY).stroke({
+									width: tilePx * 0.1,
+									color,
+								});
+							}
+							graphics
+								.circle(displayX, displayY, tilePx * 0.05)
+								.fill({ color });
+							graphics.moveTo(displayX, displayY);
+						}
+						graphics.closePath();
+					}}
+				/>
+			)}
 		</>
 	);
 }

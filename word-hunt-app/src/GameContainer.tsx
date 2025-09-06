@@ -33,9 +33,9 @@ export default function GameContainer({ grid }: GameContainerProps) {
 			height={canvasSize.height}
 			grid={grid}
 			checkWord={(word) => {
-				if (word.length > 2) {
+				if (word.length > 3) {
 					return "valid";
-				} else if (word.length === 2) {
+				} else if (word.length === 3) {
 					return "used";
 				} else {
 					return "invalid";
