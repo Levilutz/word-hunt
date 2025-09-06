@@ -11,3 +11,9 @@ canvas,
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
+
+@font-face {
+  font-family: "Helvetica Neue Bold";
+  src: url("./assets/HelveticaNeue-Bold.otf") format("opentype");
+  font-weight: bold;
+}

@@ -72,7 +72,20 @@ export default function WordHuntTile({
 				anchor={0.5}
 				x={tileSize * 0.5}
 				y={tileSize * 0.5}
-				style={{ fill: "white", fontSize: tileSize * 0.8 }}
+				style={{
+					fill: "black",
+					fontSize: tileSize * 0.8,
+					fontFamily: "Helvetica Neue Bold",
+					dropShadow: {
+						alpha: 1,
+						angle: Math.PI / 2,
+						blur: 1,
+						color: "#ffffff",
+						distance: 1,
+					},
+				}}
+				resolution={2}
+				alpha={0.6}
 			/>
 			{showHover && buttonHover && (
 				<pixiGraphics
