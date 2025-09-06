@@ -32,6 +32,16 @@ export default function GameContainer({ grid }: GameContainerProps) {
 			width={canvasSize.width}
 			height={canvasSize.height}
 			grid={grid}
+			checkWord={(word) => {
+				if (word.length > 2) {
+					return "valid";
+				} else if (word.length === 2) {
+					return "used";
+				} else {
+					return "invalid";
+				}
+			}}
+			onWordSubmit={(word) => console.log(word)}
 		/>
 	);
 }

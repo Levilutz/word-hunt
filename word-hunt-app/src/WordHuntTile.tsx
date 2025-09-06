@@ -21,6 +21,7 @@ export type WordHuntTileProps = {
 	tileSize: number;
 	contents: string;
 	showHover: boolean;
+	tint?: "valid" | "invalid" | "used";
 	onClick?: () => void;
 	onEnterClose?: () => void;
 };
@@ -31,6 +32,7 @@ export default function WordHuntTile({
 	tileSize,
 	contents,
 	showHover,
+	tint,
 	onClick,
 	onEnterClose,
 }: WordHuntTileProps) {
@@ -91,6 +93,7 @@ export default function WordHuntTile({
 				width={tileSize}
 				height={tileSize}
 				texture={hardwoodTexture}
+				tint={tintColor(tint)}
 			/>
 			<pixiText
 				text={contents}
@@ -123,4 +126,16 @@ export default function WordHuntTile({
 			)}
 		</pixiContainer>
 	);
+}
+
+function tintColor(tint?: "valid" | "invalid" | "used"): string | undefined {
+	if (tint === "valid") {
+		return "#00ff00";
+	} else if (tint === "invalid") {
+		return "#777777";
+	} else if (tint === "used") {
+		return "#ffff00";
+	} else {
+		return undefined;
+	}
 }
