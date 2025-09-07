@@ -21,5 +21,9 @@ import Navigation from "./Navigation";
 
 	app.stage.addChild(navigation);
 
-	app.renderer.on("resize", navigation.resize.bind(navigation));
+	app.renderer.on("resize", (w, h) => {
+		navigation.resize(w, h);
+		app.renderer.canvas.style.width = `${w}px`;
+		app.renderer.canvas.style.height = `${h}px`;
+	});
 })();

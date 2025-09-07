@@ -4,8 +4,9 @@ import {
 	Graphics,
 	Rectangle,
 } from "pixi.js";
+import type { AppScreen } from "../Navigation";
 
-export default class DrawScreen extends Container {
+export default class DrawScreen extends Container implements AppScreen {
 	private readonly _graphics = new Graphics();
 	private readonly _hitContainer = new Container();
 	private readonly _hitArea = new Rectangle();
