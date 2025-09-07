@@ -1,0 +1,5 @@
+{
+  "biome.lsp.bin": "./word-hunt-game/node_modules/@biomejs/biome/bin/biome",
+  "biome.requireConfiguration": true,
+  "biome.configurationPath": "./word-hunt-game/biome.json"
+}
