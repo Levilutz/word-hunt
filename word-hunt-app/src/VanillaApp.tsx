@@ -22,6 +22,7 @@ export default function VanillaApp() {
 						background: "#ffffff",
 						resizeTo: window,
 						antialias: true,
+						resolution: Math.max(window.devicePixelRatio, 2),
 					});
 					node?.appendChild(app.canvas);
 					mounted = true;
