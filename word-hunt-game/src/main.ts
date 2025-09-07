@@ -1,56 +1,25 @@
-import { Application, type FederatedPointerEvent, Graphics } from "pixi.js";
+import { Application } from "pixi.js";
 import "./style.css";
+import Navigation from "./Navigation";
 
 (async () => {
 	const app = new Application();
 
-	let pointerDown = false;
-	let path: { x: number; y: number }[] = [];
+	await app.init({
+		background: "#ffffff",
+		resizeTo: window,
+		antialias: true,
+		resolution: Math.max(window.devicePixelRatio, 2),
+	});
 
-	await app.init({ background: "#ffffff", resizeTo: window, antialias: true });
+	app.renderer.canvas.style.width = `${window.innerWidth}px`;
+	app.renderer.canvas.style.height = `${window.innerHeight}px`;
 
 	document.body.appendChild(app.canvas);
 
-	const graphics = new Graphics();
+	const navigation = new Navigation(window.innerWidth, window.innerHeight);
 
-	const drawPath = () => {
-		graphics.clear();
-		if (path.length > 1) {
-			graphics.moveTo(path[0].x, path[0].y);
-			for (let i = 1; i < path.length; i++) {
-				graphics.lineTo(path[i].x, path[i].y);
-			}
-			graphics.stroke({ width: 1, color: 0xff00ff });
-		}
-	};
+	app.stage.addChild(navigation);
 
-	app.stage.addChild(graphics);
-
-	app.stage.eventMode = "static";
-	app.stage.hitArea = app.screen;
-
-	app.stage.addEventListener(
-		"pointerdown",
-		({ global }: FederatedPointerEvent) => {
-			pointerDown = true;
-			const { x, y } = global;
-			path = [{ x, y }];
-			drawPath();
-		},
-	);
-
-	app.stage.addEventListener("pointerup", (_e: FederatedPointerEvent) => {
-		pointerDown = false;
-	});
-
-	app.stage.addEventListener(
-		"pointermove",
-		({ global }: FederatedPointerEvent) => {
-			if (pointerDown) {
-				const { x, y } = global;
-				path.push({ x, y });
-				drawPath();
-			}
-		},
-	);
+	app.renderer.on("resize", navigation.resize.bind(navigation));
 })();
