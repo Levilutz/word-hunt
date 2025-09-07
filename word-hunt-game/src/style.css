@@ -2,3 +2,19 @@ body {
   margin: 0;
   height: 100dvh;
 }
+
+canvas,
+#root {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@font-face {
+  font-family: "Helvetica Neue Bold";
+  src: url("./assets/HelveticaNeue-Bold.otf") format("opentype");
+  font-weight: bold;
+}
