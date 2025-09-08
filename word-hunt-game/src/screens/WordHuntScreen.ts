@@ -1,12 +1,22 @@
-import { Container, type FederatedPointerEvent, Rectangle } from "pixi.js";
+import {
+  Container,
+  type FederatedPointerEvent,
+  Graphics,
+  Rectangle,
+} from "pixi.js";
 import type { AppScreen } from "../Navigation";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   private readonly _hitContainer = new Container();
   private readonly _hitArea = new Rectangle();
 
+  private readonly _graphics = new Graphics();
+  private lastPos: { x: number; y: number } = { x: 0, y: 0 };
+
   constructor() {
     super();
+
+    this.addChild(this._graphics);
 
     this._hitContainer.interactive = true;
     this._hitContainer.hitArea = this._hitArea;
@@ -26,5 +36,13 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private handlePointerDown(_event: FederatedPointerEvent) {}
 
-  private handlePointerMove(_event: FederatedPointerEvent) {}
+  private handlePointerMove({ global }: FederatedPointerEvent) {
+    const { x, y } = global;
+    this._graphics.clear();
+    this._graphics
+      .moveTo(this.lastPos.x, this.lastPos.y)
+      .lineTo(x, y)
+      .stroke({ width: 1, color: 0xff00ff });
+    this.lastPos = { x, y };
+  }
 }

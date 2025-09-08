@@ -1,5 +1,5 @@
 import { Container, type Ticker } from "pixi.js";
-import DrawScreen from "./screens/DrawScreen";
+import WordHuntScreen from "./screens/WordHuntScreen";
 
 export interface AppScreen extends Container {
   update?: (time: Ticker) => void;
@@ -17,7 +17,7 @@ export default class Navigation extends Container {
     this._w = w;
     this._h = h;
 
-    this.goToScreen(new DrawScreen());
+    this.goToScreen(new WordHuntScreen());
   }
 
   goToScreen(screen: AppScreen) {
