@@ -1,6 +1,7 @@
 import { Application } from "pixi.js";
 import "./style.css";
 import Navigation from "./Navigation";
+import type { AppState } from "./State";
 
 (async () => {
   const app = new Application();
@@ -12,12 +13,25 @@ import Navigation from "./Navigation";
     resolution: Math.max(window.devicePixelRatio, 2),
   });
 
+  const appState: AppState = {
+    grid: [
+      ["A", "B", "C", "D"],
+      ["E", "F", "G", "H"],
+      ["I", "J", "K", "L"],
+      ["M", "N", "O", "P"],
+    ],
+  };
+
   app.renderer.canvas.style.width = `${window.innerWidth}px`;
   app.renderer.canvas.style.height = `${window.innerHeight}px`;
 
   document.body.appendChild(app.canvas);
 
-  const navigation = new Navigation(window.innerWidth, window.innerHeight);
+  const navigation = new Navigation(
+    appState,
+    window.innerWidth,
+    window.innerHeight,
+  );
 
   app.stage.addChild(navigation);
 

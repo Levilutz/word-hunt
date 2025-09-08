@@ -1,4 +1,5 @@
 import { Container, type Ticker } from "pixi.js";
+import type { AppState } from "./State";
 import WordHuntScreen from "./screens/WordHuntScreen";
 
 export interface AppScreen extends Container {
@@ -7,20 +8,25 @@ export interface AppScreen extends Container {
 }
 
 export default class Navigation extends Container {
+  private appState: AppState;
+
   private _curScreen?: AppScreen;
   private _w: number;
   private _h: number;
 
-  constructor(w: number, h: number) {
+  constructor(appState: AppState, w: number, h: number) {
     super();
+
+    this.appState = appState;
 
     this._w = w;
     this._h = h;
 
-    this.goToScreen(new WordHuntScreen());
+    this.goToScreen(WordHuntScreen);
   }
 
-  goToScreen(screen: AppScreen) {
+  goToScreen(Ctor: new (appState: AppState) => AppScreen) {
+    const screen = new Ctor(this.appState);
     if (this._curScreen !== undefined) {
       this.removeChild(this._curScreen);
       this._curScreen.destroy();

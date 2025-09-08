@@ -5,16 +5,21 @@ import {
   Rectangle,
 } from "pixi.js";
 import type { AppScreen } from "../Navigation";
+import type { AppState } from "../State";
 
 export default class WordHuntScreen extends Container implements AppScreen {
+  private appState: AppState;
+
   private readonly _hitContainer = new Container();
   private readonly _hitArea = new Rectangle();
 
   private readonly _graphics = new Graphics();
   private lastPos: { x: number; y: number } = { x: 0, y: 0 };
 
-  constructor() {
+  constructor(appState: AppState) {
     super();
+
+    this.appState = appState;
 
     this.addChild(this._graphics);
 
