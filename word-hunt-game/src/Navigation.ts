@@ -18,15 +18,16 @@ export default class Navigation extends Container {
     super();
 
     this.appState = appState;
-
     this._w = w;
     this._h = h;
 
     this.goToScreen(WordHuntScreen);
   }
 
-  goToScreen(Ctor: new (appState: AppState) => AppScreen) {
-    const screen = new Ctor(this.appState);
+  goToScreen(
+    Ctor: new (appState: AppState, w: number, h: number) => AppScreen,
+  ) {
+    const screen = new Ctor(this.appState, this._w, this._h);
     if (this._curScreen !== undefined) {
       this.removeChild(this._curScreen);
       this._curScreen.destroy();
