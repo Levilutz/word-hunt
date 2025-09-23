@@ -15,11 +15,6 @@ import {
   thickRasterCircles,
 } from "../utils";
 
-interface Point {
-  x: number;
-  y: number;
-}
-
 export default class WordHuntScreen extends Container implements AppScreen {
   private appState: AppState;
 
@@ -31,7 +26,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private readonly _graphics = new Graphics();
   private pointerDown = false;
-  private lastPos: Point = { x: 0, y: 0 };
+  private lastPos: PointData = { x: 0, y: 0 };
   private pointDownPos: PointData | undefined = undefined;
 
   constructor(appState: AppState, w: number, h: number) {
