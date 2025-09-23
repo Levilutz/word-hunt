@@ -83,3 +83,44 @@ export function pointTileIntersection(
   }
   return undefined;
 }
+
+/** Thick raster a line over a grid of size 1x1. */
+export function thickRaster(a: PointData, b: PointData): PointData[] {
+  const aFloor = pointFloor(a);
+  const bFloor = pointFloor(b);
+  const sx = b.x > a.x ? 1 : -1;
+  const sy = b.y > a.y ? 1 : -1;
+  // Degenerate case - vertical line
+  if (Math.floor(a.x) === Math.floor(b.x)) {
+    const out: PointData[] = [];
+    let { x, y } = aFloor;
+    while (true) {
+      out.push({ x, y });
+      if (y === bFloor.y) {
+        break;
+      }
+      y += sy;
+    }
+    return out;
+  }
+  // All other lines
+  const slope = (b.y - a.y) / (b.x - a.x);
+  const out: PointData[] = [];
+  let { x, y } = aFloor;
+  while (true) {
+    const endX = sx === 1 ? x + sx : x;
+    const lastY = Math.floor((endX - a.x) * slope + a.y);
+    while (true) {
+      out.push({ x, y });
+      if (y === lastY || y === bFloor.y) {
+        break;
+      }
+      y += sy;
+    }
+    if (x === bFloor.x) {
+      break;
+    }
+    x += sx;
+  }
+  return out;
+}
