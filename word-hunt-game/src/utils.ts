@@ -84,7 +84,10 @@ export function pointTileIntersection(
   return undefined;
 }
 
-/** Thick raster a line over a grid of size 1x1. */
+/** Thick raster a line over a grid of size 1x1.
+ *
+ * @returns index coords of pixels in order.
+ */
 export function thickRaster(a: PointData, b: PointData): PointData[] {
   const aFloor = pointFloor(a);
   const bFloor = pointFloor(b);
@@ -123,4 +126,20 @@ export function thickRaster(a: PointData, b: PointData): PointData[] {
     x += sx;
   }
   return out;
+}
+
+/** Thick raster over a grid of circles of diameter 1.
+ *
+ * @returns index coords of circles in order.
+ * */
+export function thickRasterCircles(a: PointData, b: PointData): PointData[] {
+  return thickRaster(a, b).filter(
+    (pos) =>
+      lineCircleIntersectionScalar(
+        a,
+        b,
+        { x: pos.x + 0.5, y: pos.y + 0.5 },
+        0.5,
+      ).t !== undefined,
+  );
 }
