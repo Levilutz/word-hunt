@@ -143,3 +143,27 @@ export function thickRasterCircles(a: PointData, b: PointData): PointData[] {
       ).t !== undefined,
   );
 }
+
+/** Given some params about a field, get the tile px.
+ *
+ * @param totalSpace How many Px of space are available in total
+ * @param usedPortion What portion of the space should be used? Counts from start of first tile to end of last tile.
+ * @param spaceRatio What percent of the tilePx is the space between them?
+ * @param numTiles How many tiles must fit in this space
+ * @returns The size in Px of a single tile
+ *
+ * For example, `getTilePx(20, 0.7, 0.5, 5)` will return `2`. This can be visualized as:
+ * ---||-||-||-||-||---
+ *
+ * Where `-` represents a space between tiles, and `|` represents a pixel that is part of a tile.
+ */
+export function getTilePx(
+  totalSpace: number,
+  usedPortion: number,
+  spaceRatio: number,
+  numTiles: number,
+): number {
+  return (
+    (totalSpace * usedPortion) / (numTiles * spaceRatio - spaceRatio + numTiles)
+  );
+}

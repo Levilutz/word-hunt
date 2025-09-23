@@ -8,6 +8,7 @@ import {
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import {
+  getTilePx,
   pointScale,
   pointSub,
   thickRaster,
@@ -58,6 +59,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._h = h;
     this._hitArea.width = w;
     this._hitArea.height = h;
+    this.renderTiles();
   }
 
   private handlePointerUp(_event: FederatedPointerEvent) {
@@ -76,6 +78,30 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this.renderTiles();
   }
 
+  /** How many px in do we start rendering the grid. */
+  private gridRenderStart(): PointData {
+    const { w, h } = this.gridSize();
+    const { tilePx, spacePx } = this.tileSpacePx();
+    const usedW = w * tilePx + (w - 1) * spacePx;
+    const usedH = h * tilePx + (h - 1) * spacePx;
+    return { x: (this._w - usedW) / 2, y: (this._h - usedH) / 2 };
+  }
+
+  /** What tile & space Px should we target. */
+  private tileSpacePx(): { tilePx: number; spacePx: number } {
+    const { w, h } = this.gridSize();
+    // Constants
+    const usedRatio = 0.75;
+    const spaceRatio = 0.1;
+    // Tilepx is min of what we need for width vs height
+    const tilePx = Math.min(
+      getTilePx(this._w, usedRatio, spaceRatio, w),
+      getTilePx(this._h, usedRatio, spaceRatio, h),
+    );
+    return { tilePx, spacePx: tilePx * spaceRatio };
+  }
+
+  /** What is the size of the logical word hunt grid. */
   private gridSize(): { w: number; h: number } {
     return {
       w:
@@ -87,29 +113,29 @@ export default class WordHuntScreen extends Container implements AppScreen {
   }
 
   private renderTiles() {
-    const tilePx = 70;
-    const spacePx = 7;
+    const { tilePx, spacePx } = this.tileSpacePx();
+    const gridRenderStart = this.gridRenderStart();
     this._graphics.clear();
     let highlight1: PointData[] = [];
     let highlight2: PointData[] = [];
     if (this.pointDownPos !== undefined) {
       highlight1 = thickRaster(
         pointScale(
-          pointSub(this.pointDownPos, { x: spacePx / 2, y: spacePx / 2 }),
+          pointSub(this.pointDownPos, gridRenderStart),
           1 / (tilePx + spacePx),
         ),
         pointScale(
-          pointSub(this.lastPos, { x: spacePx / 2, y: spacePx / 2 }),
+          pointSub(this.lastPos, gridRenderStart),
           1 / (tilePx + spacePx),
         ),
       );
       highlight2 = thickRasterCircles(
         pointScale(
-          pointSub(this.pointDownPos, { x: spacePx / 2, y: spacePx / 2 }),
+          pointSub(this.pointDownPos, gridRenderStart),
           1 / (tilePx + spacePx),
         ),
         pointScale(
-          pointSub(this.lastPos, { x: spacePx / 2, y: spacePx / 2 }),
+          pointSub(this.lastPos, gridRenderStart),
           1 / (tilePx + spacePx),
         ),
       );
@@ -117,8 +143,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
     console.log(highlight1);
     this.appState.grid.forEach((row, y) => {
       row.forEach((contents, x) => {
-        const x1 = (tilePx + spacePx) * x + spacePx;
-        const y1 = (tilePx + spacePx) * y + spacePx;
+        const x1 = (tilePx + spacePx) * x + gridRenderStart.x;
+        const y1 = (tilePx + spacePx) * y + gridRenderStart.y;
         // const { x: lastX, y: lastY } = this.lastPos;
         // const hovered =
         //   lastX >= x1 &&
