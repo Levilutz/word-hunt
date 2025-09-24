@@ -1,5 +1,10 @@
 import type { PointData } from "pixi.js";
 
+/** Return a + b */
+export function pointAdd(a: PointData, b: PointData): PointData {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
+
 /** Return a - b */
 export function pointSub(a: PointData, b: PointData): PointData {
   return { x: a.x - b.x, y: a.y - b.y };
@@ -166,4 +171,12 @@ export function getTilePx(
   return (
     (totalSpace * usedPortion) / (numTiles * spaceRatio - spaceRatio + numTiles)
   );
+}
+
+/** Given a grid of arbitrary values, what is the width & height of the grid. */
+export function gridSize<T>(grid: T[][]): PointData {
+  return {
+    x: grid.length > 0 ? Math.max(...grid.map((row) => row.length)) : 0,
+    y: grid.length,
+  };
 }
