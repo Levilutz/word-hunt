@@ -7,6 +7,7 @@ import {
 } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
+import WordHuntTile from "../ui/WordHuntTile";
 import {
   getTilePx,
   gridSize,
@@ -16,10 +17,8 @@ import {
   pointInList,
   pointScale,
   pointSub,
-  thickRaster,
   thickRasterCircles,
 } from "../utils";
-import WordHuntTile from "../ui/WordHuntTile";
 
 // Constants
 const usedRatio = 0.75;
@@ -144,7 +143,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       return;
     }
     console.log(
-      this.curPath.map(({ x, y }) => this.appState.grid[y][x]!).join(""),
+      this.curPath.map(({ x, y }) => this.appState.grid[y][x] ?? "").join(""),
     );
     this.curPath = [];
     this.tiles.forEach((row) => {
