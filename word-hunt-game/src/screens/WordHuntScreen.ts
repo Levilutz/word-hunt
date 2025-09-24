@@ -58,6 +58,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   /** The current path of pressed tiles. Must stay in-sync with `curWord`. */
   private _curPath: PointData[] = [];
+
   /** The current word from pressed tiles. Must stay in-sync with `curPath`. */
   private _curWord: string = "";
 
@@ -152,6 +153,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     console.log(this._curWord);
     this._curPath = [];
     this._curWord = "";
+    this.renderPathLine();
     this.tiles.forEach((row) => {
       row.forEach((tile) => {
         if (tile === null) {
@@ -173,6 +175,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._curPath = [];
       this._curWord = "";
     }
+    this.renderPathLine();
     this._lastPos = { x, y };
   }
 
@@ -194,6 +197,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
           this._curPath.push(tilePos);
           this._curWord += this._appState.grid[tilePos.y][tilePos.x] ?? "";
           this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
+          this.renderPathLine();
         } else {
           break;
         }
@@ -222,5 +226,29 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** Check if a tile at the given coordinates exists. */
   private tileExists(p: PointData) {
     return this.tiles?.[p.y]?.[p.x] != null;
+  }
+
+  /** Render the path line */
+  private renderPathLine() {
+    this._graphics.clear();
+    if (this._curPath.length === 0) {
+      return;
+    }
+    this._curPath.forEach((tileCoords, i) => {
+      const pos = pointAdd(this.getTilePos(tileCoords), {
+        x: this._tilePx * 0.5,
+        y: this._tilePx * 0.5,
+      });
+      if (i > 0) {
+        this._graphics
+          .lineTo(pos.x, pos.y)
+          .stroke({ width: this._tilePx * 0.1, color: 0xff0000 });
+      }
+      this._graphics
+        .circle(pos.x, pos.y, this._tilePx * 0.05)
+        .fill({ color: 0xff0000 });
+      this._graphics.moveTo(pos.x, pos.y);
+    });
+    this._graphics.closePath();
   }
 }

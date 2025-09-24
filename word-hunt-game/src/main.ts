@@ -14,12 +14,6 @@ import type { AppState } from "./State";
   });
 
   const appState: AppState = {
-    // grid: [
-    //   ["A", "B", "C", "D"],
-    //   ["E", "F", "G", "H"],
-    //   ["I", "J", "K", "L"],
-    //   ["M", "N", "O", "P"],
-    // ],
     grid: [
       ["A", "B", "C", "D"],
       ["E", "F", "G", "H"],
