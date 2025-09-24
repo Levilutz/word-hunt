@@ -29,6 +29,24 @@ export function pointInRect(
   return p.x >= min.x && p.x < max.x && p.y >= min.y && p.y < max.y;
 }
 
+/** Check if a and b return the same point. */
+export function pointEqual(a: PointData, b: PointData): boolean {
+  return a.x === b.x && a.y === b.y;
+}
+
+/** Check if a and b are within 1 tile in both x and y directions. False if equal. */
+export function pointAdjacent(a: PointData, b: PointData): boolean {
+  if (pointEqual(a, b)) {
+    return false;
+  }
+  return Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1;
+}
+
+/** Check whether the given point is in the given list. */
+export function pointInList(l: PointData[], p: PointData): boolean {
+  return l.some((b) => pointEqual(p, b));
+}
+
 /** Get the distance squared between two points. */
 export function distanceSquared(p1: PointData, p2: PointData): number {
   return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
