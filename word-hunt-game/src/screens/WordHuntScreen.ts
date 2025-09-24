@@ -173,6 +173,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._curPath = [];
       this._curWord = "";
     }
+    this._lastPos = { x, y };
   }
 
   private handlePointerMove({ global, buttons }: FederatedPointerEvent) {
