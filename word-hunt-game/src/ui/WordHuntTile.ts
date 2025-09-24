@@ -1,35 +1,58 @@
 import { Container, Graphics, Text } from "pixi.js";
 
 export default class WordHuntTile extends Container {
+  private _w: number;
+  private _pressed: boolean;
   private readonly _graphics: Graphics;
-  private readonly _text: Text;
+  private _text: Text;
 
-  constructor(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    content: string,
-  ) {
-    super({ x, y, width, height });
+  constructor(x: number, y: number, width: number, content: string) {
+    super({ x, y });
+    this._w = width;
+    this._pressed = false;
 
     this._graphics = new Graphics();
     this.addChild(this._graphics);
 
-    this._text = new Text({
-      text: content,
-      style: { fill: 0xff00ff, fontSize: 36, fontFamily: "Helvetica" },
-      anchor: 0.5,
-    });
+    this._text = new Text({ text: content, anchor: 0.5 });
     this.addChild(this._text);
 
     this.render();
   }
 
-  render() {
+  setBounds(x: number, y: number, width: number) {
+    this.x = x;
+    this.y = y;
+    this.setSize(width, width);
+    this._w = width;
+
+    this.render();
+  }
+
+  setPressed(pressed: boolean) {
+    this._pressed = pressed;
+
+    this.render();
+  }
+
+  private render() {
+    const pop = this._pressed ? 0.025 * this._w : 0;
     this._graphics.clear();
     this._graphics
-      .rect(0, 0, this.width, this.height)
-      .stroke({ width: 2, color: 0x0000ff });
+      .roundRect(
+        -pop,
+        -pop,
+        this._w + 2 * pop,
+        this._w + 2 * pop,
+        this._w * 0.25,
+      )
+      .fill({ color: this._pressed ? 0xf8ead3 : 0xefcc92 });
+    this._text.x = this._w * 0.5;
+    this._text.y = this._w * 0.5;
+    this._text.style = {
+      fill: 0x000000,
+      fontSize: this._w * 0.8,
+      fontFamily: "Helvetica",
+    };
   }
 }
