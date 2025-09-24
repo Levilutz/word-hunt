@@ -25,7 +25,7 @@ const usedRatio = 0.75;
 const spaceRatio = 0.1;
 
 export default class WordHuntScreen extends Container implements AppScreen {
-  private readonly appState: AppState;
+  private readonly _appState: AppState;
 
   /** The size of the logical grid of tiles. Typically 4x4. */
   private readonly _gridSize: PointData;
@@ -42,22 +42,30 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The pixel coordinates of the top-left corner of the first grid tile. */
   private _gridRenderStart: PointData = { x: 14, y: 14 };
 
+  /** A child container for tracking all pointer events in the screen. */
   private readonly _hitContainer = new Container();
+  /** Direct access to the hit area of `_hitcontainer` */
   private readonly _hitArea = new Rectangle();
 
+  /** All the child containers for every tile. */
   private readonly tiles: (WordHuntTile | null)[][];
 
+  /** The child container for graphics overlaid on top of the tiles. */
   private readonly _graphics = new Graphics();
-  private pointerDown = false;
-  private lastPos: PointData = { x: 0, y: 0 };
 
-  private curPath: PointData[] = [];
+  /** The last position the pointer was seen in. */
+  private _lastPos: PointData = { x: 0, y: 0 };
+
+  /** The current path of pressed tiles. Must stay in-sync with `curWord`. */
+  private _curPath: PointData[] = [];
+  /** The current word from pressed tiles. Must stay in-sync with `curPath`. */
+  private _curWord: string = "";
 
   constructor(appState: AppState, w: number, h: number) {
     super();
 
-    this.appState = appState;
-    this._gridSize = gridSize(this.appState.grid);
+    this._appState = appState;
+    this._gridSize = gridSize(this._appState.grid);
 
     this._w = w;
     this._h = h;
@@ -65,7 +73,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._hitArea.height = h;
     this.updateCalculatedSizes();
 
-    this.tiles = this.appState.grid.map((row, y) =>
+    this.tiles = this._appState.grid.map((row, y) =>
       row.map((value, x) => {
         if (value === null) {
           return null;
@@ -138,14 +146,12 @@ export default class WordHuntScreen extends Container implements AppScreen {
   }
 
   private handlePointerUp() {
-    this.pointerDown = false;
-    if (this.curPath.length === 0) {
+    if (this._curPath.length === 0) {
       return;
     }
-    console.log(
-      this.curPath.map(({ x, y }) => this.appState.grid[y][x] ?? "").join(""),
-    );
-    this.curPath = [];
+    console.log(this._curWord);
+    this._curPath = [];
+    this._curWord = "";
     this.tiles.forEach((row) => {
       row.forEach((tile) => {
         if (tile === null) {
@@ -158,13 +164,14 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private handlePointerDown({ global }: FederatedPointerEvent) {
     const { x, y } = global;
-    this.pointerDown = true;
     const tilePos = pointFloor(this.scaledForTiles({ x, y }));
     if (this.tileExists(tilePos)) {
-      this.curPath = [tilePos];
+      this._curPath = [tilePos];
+      this._curWord = this._appState.grid[tilePos.y][tilePos.x] ?? "";
       this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
     } else {
-      this.curPath = [];
+      this._curPath = [];
+      this._curWord = "";
     }
   }
 
@@ -172,25 +179,26 @@ export default class WordHuntScreen extends Container implements AppScreen {
     const { x, y } = global;
     if (buttons === 0) {
       this.handlePointerUp();
-    } else if (this.pointerDown && this.curPath.length > 0) {
+    } else if (this._curPath.length > 0) {
       const affected = thickRasterCircles(
-        this.scaledForTiles(this.lastPos),
+        this.scaledForTiles(this._lastPos),
         this.scaledForTiles({ x, y }),
       );
       for (const tilePos of affected) {
-        if (pointInList(this.curPath, tilePos)) {
+        if (pointInList(this._curPath, tilePos)) {
         } else if (
-          pointAdjacent(this.curPath[this.curPath.length - 1], tilePos) &&
+          pointAdjacent(this._curPath[this._curPath.length - 1], tilePos) &&
           this.tileExists(tilePos)
         ) {
-          this.curPath.push(tilePos);
+          this._curPath.push(tilePos);
+          this._curWord += this._appState.grid[tilePos.y][tilePos.x] ?? "";
           this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
         } else {
           break;
         }
       }
     }
-    this.lastPos = { x, y };
+    this._lastPos = { x, y };
   }
 
   /** Scale the given pixel coordinates to logical coords in tile hit areas.
