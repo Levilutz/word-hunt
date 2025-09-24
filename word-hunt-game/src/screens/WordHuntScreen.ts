@@ -14,6 +14,7 @@ import {
   thickRaster,
   thickRasterCircles,
 } from "../utils";
+import WordHuntTile from "../ui/WordHuntTile";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   private appState: AppState;
@@ -45,6 +46,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._hitContainer.on("pointerup", this.handlePointerUp.bind(this));
     this._hitContainer.on("pointerdown", this.handlePointerDown.bind(this));
     this._hitContainer.on("pointermove", this.handlePointerMove.bind(this));
+
+    this.addChild(new WordHuntTile(50, 50, 100, 100, "A"));
 
     this.renderTiles();
   }
@@ -138,6 +141,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
     console.log(highlight1);
     this.appState.grid.forEach((row, y) => {
       row.forEach((contents, x) => {
+        if (contents === null) {
+          return;
+        }
         const x1 = (tilePx + spacePx) * x + gridRenderStart.x;
         const y1 = (tilePx + spacePx) * y + gridRenderStart.y;
         // const { x: lastX, y: lastY } = this.lastPos;
