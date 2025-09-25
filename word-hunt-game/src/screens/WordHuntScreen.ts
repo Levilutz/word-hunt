@@ -1,24 +1,10 @@
-import {
-  Container,
-  type FederatedPointerEvent,
-  Graphics,
-  type PointData,
-  Rectangle,
-  Text,
-} from "pixi.js";
+import { Container, Graphics, type PointData, Text } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import theme, { type WordType } from "../theme";
 import WordHuntGrid from "../ui/WordHuntGrid";
-import {
-  getTilePx,
-  gridSize,
-  pointAdjacent,
-  pointFloor,
-  pointInList,
-  pointSub,
-  thickRasterCircles,
-} from "../utils";
+import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
+import { getTilePx, gridSize } from "../utils";
 
 // Constants
 const minVSpace = 80;
@@ -45,11 +31,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The pixel coordinates of the top-left corner of the first grid tile. */
   private _gridRenderStart: PointData = { x: 14, y: 14 };
 
-  /** A child container for tracking all pointer events in the screen. */
-  private readonly _hitContainer = new Container();
-  /** Direct access to the hit area of `_hitcontainer` */
-  private readonly _hitArea = new Rectangle();
-
   /** The child container for graphics overlaid on top of the tiles. */
   private readonly _graphics = new Graphics();
 
@@ -64,9 +45,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
     },
   });
 
-  /** The last position the pointer was seen in. */
-  private _lastPos: PointData = { x: 0, y: 0 };
-
   /** The current path of pressed tiles. Must stay in-sync with `curWord`. */
   private _curPath: PointData[] = [];
 
@@ -77,6 +55,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
   private _curWordType: WordType = "invalid";
 
   private _wordHuntGrid: WordHuntGrid;
+  private _wordHuntGridHitArea: WordHuntGridHitArea;
 
   constructor(appState: AppState, w: number, h: number) {
     super();
@@ -86,20 +65,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
     this._w = w;
     this._h = h;
-    this._hitArea.width = w;
-    this._hitArea.height = h;
     this.updateCalculatedSizes();
 
     this._curWordText.x = this._w / 2;
     this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
-
-    this._hitContainer.interactive = true;
-    this._hitContainer.hitArea = this._hitArea;
-    this.addChild(this._hitContainer);
-
-    this._hitContainer.on("pointerup", this.handlePointerUp.bind(this));
-    this._hitContainer.on("pointerdown", this.handlePointerDown.bind(this));
-    this._hitContainer.on("pointermove", this.handlePointerMove.bind(this));
 
     this.addChild(this._graphics);
     this.addChild(this._curWordText);
@@ -114,14 +83,20 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._curWordType,
     );
     this.addChild(this._wordHuntGrid);
+    this._wordHuntGridHitArea = new WordHuntGridHitArea(
+      this._w,
+      this._h,
+      this._wordHuntGrid,
+      this.handlePathHover.bind(this),
+      this.handlePathSubmit.bind(this),
+    );
+    this.addChild(this._wordHuntGridHitArea);
   }
 
   resize(w: number, h: number) {
     // Update w and h top-level fields, and calculated fields
     this._w = w;
     this._h = h;
-    this._hitArea.width = w;
-    this._hitArea.height = h;
     this.updateCalculatedSizes();
 
     this._wordHuntGrid.resize(
@@ -130,6 +105,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._tilePx * this._gridSize.x + this._spacePx * (this._gridSize.x - 1),
       this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
     );
+    this._wordHuntGridHitArea.resize(this._w, this._h);
 
     // Update text position
     this._curWordText.x = this._w / 2;
@@ -161,89 +137,32 @@ export default class WordHuntScreen extends Container implements AppScreen {
     };
   }
 
-  private handlePointerUp() {
-    if (this._curPath.length === 0) {
-      return;
-    }
+  private handlePathHover(path: PointData[]) {
+    this._curPath = path;
+    this._curWord = path
+      .map(({ x, y }) => this._appState.grid[y][x] ?? "")
+      .join("");
+    this._curWordText.text = this._curWord;
+    this._curWordType = this._appState.trie.containsWord(this._curWord)
+      ? this._appState.submittedWords.includes(this._curWord)
+        ? "valid-used"
+        : "valid-new"
+      : "invalid";
+    this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
+    this.updateGraphics();
+  }
+
+  private handlePathSubmit(path: PointData[]) {
+    this._curWord = path
+      .map(({ x, y }) => this._appState.grid[y][x] ?? "")
+      .join("");
     if (
       this._appState.trie.containsWord(this._curWord) &&
       !this._appState.submittedWords.includes(this._curWord)
     ) {
       this._appState.submittedWords.push(this._curWord);
     }
-    this._curPath = [];
-    this._curWord = "";
-    this._curWordText.text = "";
-    this._curWordType = "invalid";
-    this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
-    this.updateGraphics();
-  }
-
-  private handlePointerDown({ global }: FederatedPointerEvent) {
-    const { x, y } = global;
-    const tilePos = pointFloor(
-      this._wordHuntGrid.scaleForTiles(
-        pointSub({ x, y }, this._gridRenderStart),
-      ),
-    );
-    if (this.tileExists(tilePos)) {
-      this._curPath = [tilePos];
-      this._curWord = this._appState.grid[tilePos.y][tilePos.x] ?? "";
-      this._curWordText.text = this._curWord;
-      this._curWordType = this._appState.trie.containsWord(this._curWord)
-        ? this._appState.submittedWords.includes(this._curWord)
-          ? "valid-used"
-          : "valid-new"
-        : "invalid";
-      this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
-    } else {
-      this._curPath = [];
-      this._curWord = "";
-    }
-    this.updateGraphics();
-    this._lastPos = { x, y };
-  }
-
-  private handlePointerMove({ global, buttons }: FederatedPointerEvent) {
-    const { x, y } = global;
-    if (buttons === 0) {
-      this.handlePointerUp();
-    } else if (this._curPath.length > 0) {
-      const affected = thickRasterCircles(
-        this._wordHuntGrid.scaleForTiles(
-          pointSub(this._lastPos, this._gridRenderStart),
-        ),
-        this._wordHuntGrid.scaleForTiles(
-          pointSub({ x, y }, this._gridRenderStart),
-        ),
-      );
-      for (const tilePos of affected) {
-        if (pointInList(this._curPath, tilePos)) {
-        } else if (
-          pointAdjacent(this._curPath[this._curPath.length - 1], tilePos) &&
-          this.tileExists(tilePos)
-        ) {
-          this._curPath.push(tilePos);
-          this._curWord += this._appState.grid[tilePos.y][tilePos.x] ?? "";
-          this._curWordText.text = this._curWord;
-          this._curWordType = this._appState.trie.containsWord(this._curWord)
-            ? this._appState.submittedWords.includes(this._curWord)
-              ? "valid-used"
-              : "valid-new"
-            : "invalid";
-          this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
-          this.updateGraphics();
-        } else {
-          break;
-        }
-      }
-    }
-    this._lastPos = { x, y };
-  }
-
-  /** Check if a tile at the given coordinates exists. */
-  private tileExists(p: PointData) {
-    return this._appState.grid?.[p.y]?.[p.x] != null;
+    this.handlePathHover([]);
   }
 
   /** Update all graphics. */

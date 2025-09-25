@@ -131,6 +131,11 @@ export default class WordHuntGrid extends Container {
     );
   }
 
+  /** Check whether the given tile exists. */
+  tileExists(p: PointData): boolean {
+    return this._tiles?.[p.y]?.[p.x] != null;
+  }
+
   /** Update the calculated tilePx and spacePx based on new _w and _h. */
   private updateCalculatedSizes() {
     this._tilePx = Math.min(
