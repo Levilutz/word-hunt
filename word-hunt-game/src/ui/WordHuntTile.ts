@@ -5,7 +5,7 @@ export default class WordHuntTile extends Container {
   private _w: number;
   private _mode: WordType | undefined = undefined;
   private readonly _graphics = new Graphics();
-  private _text: Text;
+  private readonly _text: Text;
 
   constructor(x: number, y: number, width: number, content: string) {
     super({ x, y });

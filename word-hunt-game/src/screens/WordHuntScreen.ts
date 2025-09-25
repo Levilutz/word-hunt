@@ -1,9 +1,10 @@
-import { Container, Graphics, type PointData, Text } from "pixi.js";
+import { Container, Graphics, type PointData } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
-import theme, { type WordType } from "../theme";
+import type { WordType } from "../theme";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
+import WordHuntWord from "../ui/WordHuntWord";
 import { getTilePx, gridSize } from "../utils";
 
 // Constants
@@ -34,17 +35,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The child container for graphics overlaid on top of the tiles. */
   private readonly _graphics = new Graphics();
 
-  /** The child for text showing the current word. */
-  private readonly _curWordText = new Text({
-    text: "",
-    anchor: 0.5,
-    style: {
-      fill: 0x000000,
-      fontSize: 24,
-      fontFamily: "Helvetica Neue Bold",
-    },
-  });
-
   /** The current path of pressed tiles. Must stay in-sync with `curWord`. */
   private _curPath: PointData[] = [];
 
@@ -56,6 +46,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private _wordHuntGrid: WordHuntGrid;
   private _wordHuntGridHitArea: WordHuntGridHitArea;
+  private _curWordPreview: WordHuntWord;
 
   constructor(appState: AppState, w: number, h: number) {
     super();
@@ -67,11 +58,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._h = h;
     this.updateCalculatedSizes();
 
-    this._curWordText.x = this._w / 2;
-    this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
-
     this.addChild(this._graphics);
-    this.addChild(this._curWordText);
 
     this._wordHuntGrid = new WordHuntGrid(
       this._gridRenderStart.x,
@@ -83,13 +70,19 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._curWordType,
     );
     this.addChild(this._wordHuntGrid);
+    this._curWordPreview = new WordHuntWord(
+      this._w / 2,
+      this._gridRenderStart.y - minVSpace * 0.5,
+      "",
+      undefined,
+    );
+    this.addChild(this._curWordPreview);
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
       this._w,
       this._h,
       this._wordHuntGrid,
       this.handlePathHover.bind(this),
       this.handlePathSubmit.bind(this),
-      true,
     );
     this.addChild(this._wordHuntGridHitArea);
   }
@@ -109,11 +102,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._wordHuntGridHitArea.resize(this._w, this._h);
 
     // Update text position
-    this._curWordText.x = this._w / 2;
-    this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
-
-    // Update graphics
-    this.updateGraphics();
+    this._curWordPreview.setPos(
+      this._w / 2,
+      this._gridRenderStart.y - minVSpace * 0.5,
+    );
   }
 
   /** Update the sizes and positions of things dependent on width & height. */
@@ -143,14 +135,13 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._curWord = path
       .map(({ x, y }) => this._appState.grid[y][x] ?? "")
       .join("");
-    this._curWordText.text = this._curWord;
     this._curWordType = this._appState.trie.containsWord(this._curWord)
       ? this._appState.submittedWords.includes(this._curWord)
         ? "valid-used"
         : "valid-new"
       : "invalid";
+    this._curWordPreview.setContent(this._curWord, this._curWordType);
     this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
-    this.updateGraphics();
   }
 
   private handlePathSubmit(path: PointData[]) {
@@ -164,32 +155,5 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._appState.submittedWords.push(this._curWord);
     }
     this.handlePathHover([]);
-  }
-
-  /** Update all graphics. */
-  private updateGraphics() {
-    this._graphics.clear();
-    this.renderTextBg();
-  }
-
-  /** Render the background on the current word text. */
-  private renderTextBg() {
-    if (this._curPath.length === 0) {
-      return;
-    }
-    const color =
-      this._curWordType === "invalid"
-        ? theme.default
-        : theme.wordTypes[this._curWordType];
-    const pad: PointData = { x: 10, y: 5 };
-    this._graphics
-      .roundRect(
-        this._curWordText.x - this._curWordText.width * 0.5 - pad.x,
-        this._curWordText.y - this._curWordText.height * 0.5 - pad.y,
-        this._curWordText.width + pad.x * 2,
-        this._curWordText.height + pad.y * 2,
-        10,
-      )
-      .fill({ color });
   }
 }
