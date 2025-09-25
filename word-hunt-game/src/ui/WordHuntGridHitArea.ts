@@ -12,7 +12,6 @@ import {
   pointFloor,
   pointInList,
   pointInRect,
-  pointScale,
   pointSub,
   thickRasterCircles,
 } from "../utils";
