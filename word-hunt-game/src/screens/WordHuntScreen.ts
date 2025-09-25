@@ -37,16 +37,16 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
     this._wordHuntGrid = new WordHuntGrid(
       this._w * 0.125,
-      200,
+      300,
       Math.max(this._w * 0.75, 100),
-      Math.max(this._h - 300, 100),
+      Math.max(this._h - 350, 100),
       { x: 0.5, y: 0 },
       this._appState.grid,
       this._curPath,
       "invalid",
     );
     this.addChild(this._wordHuntGrid);
-    this._curWordPreview = new WordHuntWord(this._w / 2, 150, "", undefined);
+    this._curWordPreview = new WordHuntWord(this._w / 2, 250, "", undefined);
     this.addChild(this._curWordPreview);
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
       this._w,
@@ -66,14 +66,14 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
     this._wordHuntGrid.resize(
       this._w * 0.125,
-      200,
+      300,
       Math.max(this._w * 0.75, 100),
-      Math.max(this._h - 300, 100),
+      Math.max(this._h - 350, 100),
     );
     this._wordHuntGridHitArea.resize(this._w, this._h);
 
     // Update text position
-    this._curWordPreview.setPos(this._w / 2, 150);
+    this._curWordPreview.setPos(this._w / 2, 250);
   }
 
   private handlePathHover(path: PointData[]) {
