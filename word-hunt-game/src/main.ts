@@ -1,5 +1,6 @@
 import { Application } from "pixi.js";
 import "./style.css";
+import { Trie } from "./core/trie";
 import Navigation from "./Navigation";
 import type { AppState } from "./State";
 
@@ -14,6 +15,7 @@ import type { AppState } from "./State";
   });
 
   const appState: AppState = {
+    trie: new Trie(["A", "ABC", "ABCH", "ABCHG"]),
     grid: [
       ["A", "B", "C", "D"],
       ["E", "F", "G", "H"],
