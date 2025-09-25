@@ -1,7 +1,6 @@
 import { Container, Graphics, type PointData } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
-import type { WordType } from "../theme";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
@@ -32,17 +31,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The pixel coordinates of the top-left corner of the first grid tile. */
   private _gridRenderStart: PointData = { x: 14, y: 14 };
 
-  /** The child container for graphics overlaid on top of the tiles. */
-  private readonly _graphics = new Graphics();
-
-  /** The current path of pressed tiles. Must stay in-sync with `curWord`. */
+  /** The current path of pressed tiles. */
   private _curPath: PointData[] = [];
-
-  /** The current word from pressed tiles. Must stay in-sync with `curPath`. */
-  private _curWord: string = "";
-
-  /** The type of the current word. */
-  private _curWordType: WordType = "invalid";
 
   private _wordHuntGrid: WordHuntGrid;
   private _wordHuntGridHitArea: WordHuntGridHitArea;
@@ -58,8 +48,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._h = h;
     this.updateCalculatedSizes();
 
-    this.addChild(this._graphics);
-
     this._wordHuntGrid = new WordHuntGrid(
       this._gridRenderStart.x,
       this._gridRenderStart.y,
@@ -67,7 +55,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
       this._appState.grid,
       this._curPath,
-      this._curWordType,
+      "invalid",
     );
     this.addChild(this._wordHuntGrid);
     this._curWordPreview = new WordHuntWord(
@@ -132,27 +120,27 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private handlePathHover(path: PointData[]) {
     this._curPath = path;
-    this._curWord = path
+    const _curWord = path
       .map(({ x, y }) => this._appState.grid[y][x] ?? "")
       .join("");
-    this._curWordType = this._appState.trie.containsWord(this._curWord)
-      ? this._appState.submittedWords.includes(this._curWord)
+    const curWordType = this._appState.trie.containsWord(_curWord)
+      ? this._appState.submittedWords.includes(_curWord)
         ? "valid-used"
         : "valid-new"
       : "invalid";
-    this._curWordPreview.setContent(this._curWord, this._curWordType);
-    this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
+    this._curWordPreview.setContent(_curWord, curWordType);
+    this._wordHuntGrid.updatePath(this._curPath, curWordType);
   }
 
   private handlePathSubmit(path: PointData[]) {
-    this._curWord = path
+    const _curWord = path
       .map(({ x, y }) => this._appState.grid[y][x] ?? "")
       .join("");
     if (
-      this._appState.trie.containsWord(this._curWord) &&
-      !this._appState.submittedWords.includes(this._curWord)
+      this._appState.trie.containsWord(_curWord) &&
+      !this._appState.submittedWords.includes(_curWord)
     ) {
-      this._appState.submittedWords.push(this._curWord);
+      this._appState.submittedWords.push(_curWord);
     }
     this.handlePathHover([]);
   }
