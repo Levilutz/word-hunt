@@ -121,7 +121,7 @@ export default class WordHuntGridHitArea extends Container {
 
   /** Given pixel-space coordinates, scale to grid logical space. */
   private scaleForGrid(p: PointData): PointData {
-    return this._gridRef.scaleForTiles(pointSub(p, this._gridRef));
+    return this._gridRef.pixelToLogical(pointSub(p, this._gridRef), true);
   }
 
   /** Update debug graphics if appropriate. */
@@ -134,9 +134,9 @@ export default class WordHuntGridHitArea extends Container {
     const tileCoords = this._gridRef.allTileCoords();
     if (this._curPath.length === 0) {
       tileCoords.forEach((coords) => {
-        const tilePos = pointSub(
-          pointAdd(pointScale(coords, tilePx + spacePx), this._gridRef),
-          { x: spacePx * 0.5, y: spacePx * 0.5 },
+        const tilePos = pointAdd(
+          this._gridRef.logicalToPixel(coords, true),
+          this._gridRef,
         );
         const sideLength = tilePx + spacePx;
         const hovered = pointInRect(
@@ -151,7 +151,7 @@ export default class WordHuntGridHitArea extends Container {
     } else {
       tileCoords.forEach((coords) => {
         const tilePos = pointAdd(
-          pointAdd(pointScale(coords, tilePx + spacePx), this._gridRef),
+          pointAdd(this._gridRef.logicalToPixel(coords), this._gridRef),
           { x: tilePx * 0.5, y: tilePx * 0.5 },
         );
         const r = (tilePx + spacePx) * 0.5;

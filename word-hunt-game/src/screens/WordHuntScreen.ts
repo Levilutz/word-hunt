@@ -1,4 +1,4 @@
-import { Container, Graphics, type PointData } from "pixi.js";
+import { Container, type PointData } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import WordHuntGrid from "../ui/WordHuntGrid";
@@ -49,10 +49,11 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this.updateCalculatedSizes();
 
     this._wordHuntGrid = new WordHuntGrid(
-      this._gridRenderStart.x,
-      this._gridRenderStart.y,
-      this._tilePx * this._gridSize.x + this._spacePx * (this._gridSize.x - 1),
-      this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
+      this._w * (1 - usedRatio) * 0.5,
+      this._h * (1 - usedRatio) * 0.5,
+      this._w * usedRatio,
+      this._h * usedRatio,
+      { x: 0.5, y: 0 },
       this._appState.grid,
       this._curPath,
       "invalid",
@@ -71,6 +72,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._wordHuntGrid,
       this.handlePathHover.bind(this),
       this.handlePathSubmit.bind(this),
+      true,
     );
     this.addChild(this._wordHuntGridHitArea);
   }
@@ -82,10 +84,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this.updateCalculatedSizes();
 
     this._wordHuntGrid.resize(
-      this._gridRenderStart.x,
-      this._gridRenderStart.y,
-      this._tilePx * this._gridSize.x + this._spacePx * (this._gridSize.x - 1),
-      this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
+      this._w * (1 - usedRatio) * 0.5,
+      this._h * (1 - usedRatio) * 0.5,
+      this._w * usedRatio,
+      this._h * usedRatio,
     );
     this._wordHuntGridHitArea.resize(this._w, this._h);
 

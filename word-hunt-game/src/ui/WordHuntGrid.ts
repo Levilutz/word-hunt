@@ -6,6 +6,7 @@ import {
   pointAdd,
   pointInList,
   pointScale,
+  pointSub,
 } from "../utils";
 import WordHuntTile from "./WordHuntTile";
 
@@ -17,6 +18,12 @@ export default class WordHuntGrid extends Container {
 
   /** The max height (in px) the grid may consume. */
   private _h: number;
+
+  /** The anchor position. */
+  private readonly _anchor: PointData;
+
+  /** The position of the top-left corner of the grid. */
+  private _gridRenderStart: PointData = { x: 0, y: 0 };
 
   /** The current path drawn over the grid. */
   private _curPath: PointData[] = [];
@@ -44,6 +51,7 @@ export default class WordHuntGrid extends Container {
     y: number,
     width: number,
     height: number,
+    anchor: PointData,
     grid: (string | null)[][],
     path: PointData[],
     wordType: WordType,
@@ -51,6 +59,7 @@ export default class WordHuntGrid extends Container {
     super({ x, y });
     this._w = width;
     this._h = height;
+    this._anchor = anchor;
     this._curPath = path;
     this._curWordType = wordType;
 
@@ -62,7 +71,7 @@ export default class WordHuntGrid extends Container {
         if (value === null) {
           return null;
         }
-        const tilePos = pointScale({ x, y }, this._tilePx + this._spacePx);
+        const tilePos = this.logicalToPixel({ x, y });
         const tile = new WordHuntTile(
           tilePos.x,
           tilePos.y,
@@ -92,7 +101,7 @@ export default class WordHuntGrid extends Container {
         if (tile === null) {
           return;
         }
-        const tilePos = pointScale({ x, y }, this._tilePx + this._spacePx);
+        const tilePos = this.logicalToPixel({ x, y });
         tile.setBounds(tilePos.x, tilePos.y, this._tilePx);
       });
     });
@@ -128,10 +137,25 @@ export default class WordHuntGrid extends Container {
     return this._spacePx;
   }
 
+  /** Given a point in logical tile space, scale it to pixel space. */
+  logicalToPixel(p: PointData, wide?: boolean): PointData {
+    let out = pointAdd(
+      pointScale(p, this._tilePx + this._spacePx),
+      this._gridRenderStart,
+    );
+    if (wide) {
+      out = pointSub(out, { x: this._spacePx * 0.5, y: this._spacePx * 0.5 });
+    }
+    return out;
+  }
+
   /** Given a point in pixel space, scale it to logical tile space. */
-  scaleForTiles(p: PointData): PointData {
+  pixelToLogical(p: PointData, wide?: boolean): PointData {
+    if (wide) {
+      p = pointAdd(p, { x: this._spacePx * 0.5, y: this._spacePx * 0.5 });
+    }
     return pointScale(
-      pointAdd(p, { x: this._spacePx * 0.5, y: this._spacePx * 0.5 }),
+      pointSub(p, this._gridRenderStart),
       1 / (this._tilePx + this._spacePx),
     );
   }
@@ -155,13 +179,22 @@ export default class WordHuntGrid extends Container {
       .filter((p) => p !== null);
   }
 
-  /** Update the calculated tilePx and spacePx based on new _w and _h. */
+  /** Update the calculated tilePx, spacePx, and gridRenderStart based on new _w and _h. */
   private updateCalculatedSizes() {
     this._tilePx = Math.min(
       getTilePx(this._w, TILE_SPACE_RATIO, this._gridSize.x),
       getTilePx(this._h, TILE_SPACE_RATIO, this._gridSize.y),
     );
     this._spacePx = this._tilePx * TILE_SPACE_RATIO;
+    const consumed = pointAdd(
+      pointScale(this._gridSize, this._tilePx),
+      pointScale(pointSub(this._gridSize, { x: 1, y: 1 }), this._spacePx),
+    );
+    const free = pointSub({ x: this._w, y: this._h }, consumed);
+    this._gridRenderStart = {
+      x: free.x * this._anchor.x,
+      y: free.y * this._anchor.y,
+    };
   }
 
   /** Render the path over the tiles. */
@@ -172,13 +205,10 @@ export default class WordHuntGrid extends Container {
     }
     const color = this._curWordType === "invalid" ? 0xff0000 : 0xffffff;
     this._curPath.forEach((tileCoords, i) => {
-      const pos = pointAdd(
-        pointScale(tileCoords, this._tilePx + this._spacePx),
-        {
-          x: this._tilePx * 0.5,
-          y: this._tilePx * 0.5,
-        },
-      );
+      const pos = pointAdd(this.logicalToPixel(tileCoords), {
+        x: this._tilePx * 0.5,
+        y: this._tilePx * 0.5,
+      });
       if (i > 0) {
         this._path
           .lineTo(pos.x, pos.y)
