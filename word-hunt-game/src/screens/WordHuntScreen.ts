@@ -185,7 +185,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (this._curPath.length === 0) {
       return;
     }
-    if (this._appState.trie.containsWord(this._curWord)) {
+    if (
+      this._appState.trie.containsWord(this._curWord) &&
+      !this._appState.submittedWords.includes(this._curWord)
+    ) {
       this._appState.submittedWords.push(this._curWord);
     }
     this._curPath = [];
