@@ -4,6 +4,7 @@ import {
   Graphics,
   type PointData,
   Rectangle,
+  Text,
 } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
@@ -21,6 +22,7 @@ import {
 } from "../utils";
 
 // Constants
+const minVSpace = 80;
 const usedRatio = 0.75;
 const spaceRatio = 0.1;
 
@@ -35,6 +37,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The height of the screen's area in Px. */
   private _h: number = 200;
 
+  /** The vertical space above and below the tile grid. */
+  private _vSpace: number = minVSpace;
   /** The width and height of a single tile in Px. */
   private _tilePx: number = 40;
   /** The space between any two tiles in Px. */
@@ -52,6 +56,17 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   /** The child container for graphics overlaid on top of the tiles. */
   private readonly _graphics = new Graphics();
+
+  /** The child for text showing the current word. */
+  private readonly _curWordText = new Text({
+    text: "",
+    anchor: 0.5,
+    style: {
+      fill: 0x000000,
+      fontSize: 24,
+      fontFamily: "Helvetica",
+    },
+  });
 
   /** The last position the pointer was seen in. */
   private _lastPos: PointData = { x: 0, y: 0 };
@@ -91,6 +106,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
       }),
     );
 
+    this._curWordText.x = this._w / 2;
+    this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
+
     this._hitContainer.interactive = true;
     this._hitContainer.hitArea = this._hitArea;
     this.addChild(this._hitContainer);
@@ -100,6 +118,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._hitContainer.on("pointermove", this.handlePointerMove.bind(this));
 
     this.addChild(this._graphics);
+    this.addChild(this._curWordText);
   }
 
   resize(w: number, h: number) {
@@ -120,13 +139,25 @@ export default class WordHuntScreen extends Container implements AppScreen {
         tile.setBounds(tilePos.x, tilePos.y, this._tilePx);
       });
     });
+
+    // Update text position
+    this._curWordText.x = this._w / 2;
+    this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
+
+    // Update graphics
+    this.updateGraphics();
   }
 
   /** Update the sizes and positions of things dependent on width & height. */
   private updateCalculatedSizes() {
+    this._vSpace = Math.max(this._h * (1 - usedRatio) * 0.5, minVSpace);
     this._tilePx = Math.min(
       getTilePx(this._w * usedRatio, spaceRatio, this._gridSize.x),
-      getTilePx(this._h * usedRatio, spaceRatio, this._gridSize.y),
+      getTilePx(
+        Math.max(this._h - this._vSpace * 2, 1),
+        spaceRatio,
+        this._gridSize.y,
+      ),
     );
     this._spacePx = this._tilePx * spaceRatio;
     const usedW =
@@ -153,7 +184,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
     console.log(this._curWord);
     this._curPath = [];
     this._curWord = "";
-    this.renderPathLine();
+    this._curWordText.text = "";
+    this.updateGraphics();
     this.tiles.forEach((row) => {
       row.forEach((tile) => {
         if (tile === null) {
@@ -170,12 +202,13 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (this.tileExists(tilePos)) {
       this._curPath = [tilePos];
       this._curWord = this._appState.grid[tilePos.y][tilePos.x] ?? "";
+      this._curWordText.text = this._curWord;
       this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
     } else {
       this._curPath = [];
       this._curWord = "";
     }
-    this.renderPathLine();
+    this.updateGraphics();
     this._lastPos = { x, y };
   }
 
@@ -196,8 +229,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
         ) {
           this._curPath.push(tilePos);
           this._curWord += this._appState.grid[tilePos.y][tilePos.x] ?? "";
+          this._curWordText.text = this._curWord;
           this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
-          this.renderPathLine();
+          this.updateGraphics();
         } else {
           break;
         }
@@ -228,9 +262,15 @@ export default class WordHuntScreen extends Container implements AppScreen {
     return this.tiles?.[p.y]?.[p.x] != null;
   }
 
+  /** Update all graphics. */
+  private updateGraphics() {
+    this._graphics.clear();
+    this.renderPathLine();
+    this.renderTextBg();
+  }
+
   /** Render the path line */
   private renderPathLine() {
-    this._graphics.clear();
     if (this._curPath.length === 0) {
       return;
     }
@@ -251,5 +291,23 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._graphics.moveTo(pos.x, pos.y);
     });
     this._graphics.closePath();
+  }
+
+  /** Render the background on the current word text. */
+  private renderTextBg() {
+    if (this._curPath.length === 0) {
+      return;
+    }
+    const color = 0xefcc92;
+    const pad: PointData = { x: 10, y: 5 };
+    this._graphics
+      .roundRect(
+        this._curWordText.x - this._curWordText.width * 0.5 - pad.x,
+        this._curWordText.y - this._curWordText.height * 0.5 - pad.y,
+        this._curWordText.width + pad.x * 2,
+        this._curWordText.height + pad.y * 2,
+        10,
+      )
+      .fill({ color });
   }
 }
