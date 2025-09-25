@@ -4,67 +4,49 @@ import type { AppState } from "../State";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
-import { getTilePx, gridSize } from "../utils";
-
-// Constants
-const minVSpace = 80;
-const usedRatio = 0.75;
-const spaceRatio = 0.1;
 
 export default class WordHuntScreen extends Container implements AppScreen {
+  /** A reference to the global app state. */
   private readonly _appState: AppState;
-
-  /** The size of the logical grid of tiles. Typically 4x4. */
-  private readonly _gridSize: PointData;
 
   /** The width of the screen's area in Px. */
   private _w: number = 200;
+
   /** The height of the screen's area in Px. */
   private _h: number = 200;
-
-  /** The vertical space above and below the tile grid. */
-  private _vSpace: number = minVSpace;
-  /** The width and height of a single tile in Px. */
-  private _tilePx: number = 40;
-  /** The space between any two tiles in Px. */
-  private _spacePx: number = 4;
-  /** The pixel coordinates of the top-left corner of the first grid tile. */
-  private _gridRenderStart: PointData = { x: 14, y: 14 };
 
   /** The current path of pressed tiles. */
   private _curPath: PointData[] = [];
 
+  /** A child container for the grid of tiles. */
   private _wordHuntGrid: WordHuntGrid;
+
+  /** A child container for managing the hit area over the grid. */
   private _wordHuntGridHitArea: WordHuntGridHitArea;
+
+  /** A child container for showing the currently-selected word. */
   private _curWordPreview: WordHuntWord;
 
   constructor(appState: AppState, w: number, h: number) {
     super();
 
     this._appState = appState;
-    this._gridSize = gridSize(this._appState.grid);
 
     this._w = w;
     this._h = h;
-    this.updateCalculatedSizes();
 
     this._wordHuntGrid = new WordHuntGrid(
-      this._w * (1 - usedRatio) * 0.5,
-      this._h * (1 - usedRatio) * 0.5,
-      this._w * usedRatio,
-      this._h * usedRatio,
+      this._w * 0.125,
+      200,
+      Math.max(this._w * 0.75, 100),
+      Math.max(this._h - 300, 100),
       { x: 0.5, y: 0 },
       this._appState.grid,
       this._curPath,
       "invalid",
     );
     this.addChild(this._wordHuntGrid);
-    this._curWordPreview = new WordHuntWord(
-      this._w / 2,
-      this._gridRenderStart.y - minVSpace * 0.5,
-      "",
-      undefined,
-    );
+    this._curWordPreview = new WordHuntWord(this._w / 2, 150, "", undefined);
     this.addChild(this._curWordPreview);
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
       this._w,
@@ -81,43 +63,17 @@ export default class WordHuntScreen extends Container implements AppScreen {
     // Update w and h top-level fields, and calculated fields
     this._w = w;
     this._h = h;
-    this.updateCalculatedSizes();
 
     this._wordHuntGrid.resize(
-      this._w * (1 - usedRatio) * 0.5,
-      this._h * (1 - usedRatio) * 0.5,
-      this._w * usedRatio,
-      this._h * usedRatio,
+      this._w * 0.125,
+      200,
+      Math.max(this._w * 0.75, 100),
+      Math.max(this._h - 300, 100),
     );
     this._wordHuntGridHitArea.resize(this._w, this._h);
 
     // Update text position
-    this._curWordPreview.setPos(
-      this._w / 2,
-      this._gridRenderStart.y - minVSpace * 0.5,
-    );
-  }
-
-  /** Update the sizes and positions of things dependent on width & height. */
-  private updateCalculatedSizes() {
-    this._vSpace = Math.max(this._h * (1 - usedRatio) * 0.5, minVSpace);
-    this._tilePx = Math.min(
-      getTilePx(this._w * usedRatio, spaceRatio, this._gridSize.x),
-      getTilePx(
-        Math.max(this._h - this._vSpace * 2, 1),
-        spaceRatio,
-        this._gridSize.y,
-      ),
-    );
-    this._spacePx = this._tilePx * spaceRatio;
-    const usedW =
-      this._gridSize.x * this._tilePx + (this._gridSize.x - 1) * this._spacePx;
-    const usedH =
-      this._gridSize.y * this._tilePx + (this._gridSize.y - 1) * this._spacePx;
-    this._gridRenderStart = {
-      x: (this._w - usedW) / 2,
-      y: (this._h - usedH) / 2,
-    };
+    this._curWordPreview.setPos(this._w / 2, 150);
   }
 
   private handlePathHover(path: PointData[]) {
