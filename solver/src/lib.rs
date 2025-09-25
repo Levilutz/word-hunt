@@ -49,8 +49,11 @@ impl WordTree {
 
     /// Ensure a head node for the given char exists, return its id
     fn ensure_head(&mut self, chr: u8, terminus: bool) -> usize {
-        if let Some(head_id) = self.head_ids.get(&chr) {
-            return *head_id;
+        if let Some(&head_id) = self.head_ids.get(&chr) {
+            if terminus && !self.nodes[head_id].terminus {
+                self.nodes[head_id].terminus = true;
+            }
+            return head_id;
         }
         let id = self.add_node(None, chr, terminus);
         self.head_ids.insert(chr, id);
@@ -59,8 +62,11 @@ impl WordTree {
 
     /// Ensure a child for the given node exists, return its id
     fn ensure_child(&mut self, node_id: usize, val: u8, terminus: bool) -> usize {
-        if let Some(child_id) = self.nodes[node_id].next.get(&val) {
-            return *child_id;
+        if let Some(&child_id) = self.nodes[node_id].next.get(&val) {
+            if terminus && !self.nodes[child_id].terminus {
+                self.nodes[child_id].terminus = true;
+            }
+            return child_id;
         }
         let child_id = self.add_node(Some(node_id), val, terminus);
         self.nodes[node_id].next.insert(val, child_id);
@@ -327,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_word_tree() {
-        let words = to_owned(&["FOO", "BAR", "BAZ", "FOOOZ", "BARZ", "BUZ"]);
+        let words = to_owned(&["FOO", "BAR", "BAZ", "FOOOZ", "BARZ", "BUZ", "FO", "F"]);
         let mut tree = WordTree::default();
         for word in &words {
             tree.add_word(&Word::from_str(word));
