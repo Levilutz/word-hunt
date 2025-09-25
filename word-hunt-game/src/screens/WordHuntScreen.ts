@@ -234,6 +234,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (this._curPath.length === 0) {
       return;
     }
+    const color = this._appState.trie.containsWord(this._curWord)
+      ? 0xffffff
+      : 0xff0000;
     this._curPath.forEach((tileCoords, i) => {
       const pos = pointAdd(this.getTilePos(tileCoords), {
         x: this._tilePx * 0.5,
@@ -242,11 +245,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
       if (i > 0) {
         this._graphics
           .lineTo(pos.x, pos.y)
-          .stroke({ width: this._tilePx * 0.1, color: 0xff0000 });
+          .stroke({ width: this._tilePx * 0.1, color });
       }
-      this._graphics
-        .circle(pos.x, pos.y, this._tilePx * 0.05)
-        .fill({ color: 0xff0000 });
+      this._graphics.circle(pos.x, pos.y, this._tilePx * 0.05).fill({ color });
       this._graphics.moveTo(pos.x, pos.y);
     });
     this._graphics.closePath();
