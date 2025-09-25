@@ -118,9 +118,14 @@ export default class WordHuntGrid extends Container {
     this.renderPath();
   }
 
-  /** Get the current path. */
-  get path(): PointData[] {
-    return this._curPath;
+  /** Get the calculated tilePx. */
+  get tilePx(): number {
+    return this._tilePx;
+  }
+
+  /** Get the calculated spacePx. */
+  get spacePx(): number {
+    return this._spacePx;
   }
 
   /** Given a point in pixel space, scale it to logical tile space. */
@@ -134,6 +139,20 @@ export default class WordHuntGrid extends Container {
   /** Check whether the given tile exists. */
   tileExists(p: PointData): boolean {
     return this._tiles?.[p.y]?.[p.x] != null;
+  }
+
+  /** Get logical coordinates for every tile. */
+  allTileCoords(): PointData[] {
+    return this._tiles
+      .flatMap((row, y) =>
+        row.map((tile, x) => {
+          if (tile === null) {
+            return null;
+          }
+          return { x, y };
+        }),
+      )
+      .filter((p) => p !== null);
   }
 
   /** Update the calculated tilePx and spacePx based on new _w and _h. */
