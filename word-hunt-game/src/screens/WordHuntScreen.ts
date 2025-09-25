@@ -89,6 +89,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._wordHuntGrid,
       this.handlePathHover.bind(this),
       this.handlePathSubmit.bind(this),
+      true,
     );
     this.addChild(this._wordHuntGridHitArea);
   }

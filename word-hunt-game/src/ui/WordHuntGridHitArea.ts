@@ -1,13 +1,18 @@
 import {
   Container,
   type FederatedPointerEvent,
+  Graphics,
   type PointData,
   Rectangle,
 } from "pixi.js";
 import {
+  distanceSquared,
+  pointAdd,
   pointAdjacent,
   pointFloor,
   pointInList,
+  pointInRect,
+  pointScale,
   pointSub,
   thickRasterCircles,
 } from "../utils";
@@ -29,25 +34,35 @@ export default class WordHuntGridHitArea extends Container {
   /** The current path. */
   private _curPath: PointData[] = [];
 
+  /** Debug graphics. */
+  private _debug?: Graphics;
+
   constructor(
     width: number,
     height: number,
     grid: WordHuntGrid,
     onPathHover?: (path: PointData[]) => void,
     onPathSubmit?: (path: PointData[]) => void,
+    debug?: boolean,
   ) {
     super({ x: 0, y: 0, interactive: true });
     this.hitArea = new Rectangle(0, 0, width, height);
     this._gridRef = grid;
     this._onPathHover = onPathHover;
     this._onPathSubmit = onPathSubmit;
+    if (debug) {
+      this._debug = new Graphics();
+      this.addChild(this._debug);
+    }
     this.on("pointerup", this.handlePointerUp.bind(this));
     this.on("pointerdown", this.handlePointerDown.bind(this));
     this.on("pointermove", this.handlePointerMove.bind(this));
+    this.updateDebug();
   }
 
   resize(w: number, h: number) {
     this.hitArea = new Rectangle(0, 0, w, h);
+    this.updateDebug();
   }
 
   /** Handle a pointerup event over our hit area. */
@@ -56,6 +71,7 @@ export default class WordHuntGridHitArea extends Container {
       this._onPathSubmit?.(this._curPath);
     }
     this._curPath = [];
+    this.updateDebug();
   }
 
   /** Handle a pointerdown event over our hit area. */
@@ -69,6 +85,7 @@ export default class WordHuntGridHitArea extends Container {
     }
     this._onPathHover?.(this._curPath);
     this._lastPos = { x, y };
+    this.updateDebug();
   }
 
   /** Handle a pointermove event over our hit area. */
@@ -99,10 +116,50 @@ export default class WordHuntGridHitArea extends Container {
       }
     }
     this._lastPos = { x, y };
+    this.updateDebug();
   }
 
   /** Given pixel-space coordinates, scale to grid logical space. */
   private scaleForGrid(p: PointData): PointData {
     return this._gridRef.scaleForTiles(pointSub(p, this._gridRef));
+  }
+
+  /** Update debug graphics if appropriate. */
+  private updateDebug() {
+    if (this._debug === undefined) {
+      return;
+    }
+    this._debug.clear();
+    const { tilePx, spacePx } = this._gridRef;
+    const tileCoords = this._gridRef.allTileCoords();
+    if (this._curPath.length === 0) {
+      tileCoords.forEach((coords) => {
+        const tilePos = pointSub(
+          pointAdd(pointScale(coords, tilePx + spacePx), this._gridRef),
+          { x: spacePx * 0.5, y: spacePx * 0.5 },
+        );
+        const sideLength = tilePx + spacePx;
+        const hovered = pointInRect(
+          this._lastPos,
+          tilePos,
+          pointAdd(tilePos, { x: sideLength, y: sideLength }),
+        );
+        this._debug
+          ?.rect(tilePos.x, tilePos.y, sideLength - 1, sideLength - 1)
+          .stroke({ width: 1, color: hovered ? 0xff00ff : 0x00ff00 });
+      });
+    } else {
+      tileCoords.forEach((coords) => {
+        const tilePos = pointAdd(
+          pointAdd(pointScale(coords, tilePx + spacePx), this._gridRef),
+          { x: tilePx * 0.5, y: tilePx * 0.5 },
+        );
+        const r = (tilePx + spacePx) * 0.5;
+        const hovered = distanceSquared(tilePos, this._lastPos) <= r ** 2;
+        this._debug
+          ?.circle(tilePos.x, tilePos.y, r - 0.5)
+          .stroke({ width: 1, color: hovered ? 0xff00ff : 0x00ff00 });
+      });
+    }
   }
 }
