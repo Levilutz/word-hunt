@@ -182,13 +182,10 @@ export function thickRasterCircles(a: PointData, b: PointData): PointData[] {
  */
 export function getTilePx(
   totalSpace: number,
-  usedPortion: number,
   spaceRatio: number,
   numTiles: number,
 ): number {
-  return (
-    (totalSpace * usedPortion) / (numTiles * spaceRatio - spaceRatio + numTiles)
-  );
+  return totalSpace / (numTiles * spaceRatio - spaceRatio + numTiles);
 }
 
 /** Given a grid of arbitrary values, what is the width & height of the grid. */

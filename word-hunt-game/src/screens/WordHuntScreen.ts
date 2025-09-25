@@ -125,8 +125,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** Update the sizes and positions of things dependent on width & height. */
   private updateCalculatedSizes() {
     this._tilePx = Math.min(
-      getTilePx(this._w, usedRatio, spaceRatio, this._gridSize.x),
-      getTilePx(this._h, usedRatio, spaceRatio, this._gridSize.y),
+      getTilePx(this._w * usedRatio, spaceRatio, this._gridSize.x),
+      getTilePx(this._h * usedRatio, spaceRatio, this._gridSize.y),
     );
     this._spacePx = this._tilePx * spaceRatio;
     const usedW =
