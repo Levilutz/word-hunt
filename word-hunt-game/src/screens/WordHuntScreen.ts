@@ -16,7 +16,6 @@ import {
   pointAdjacent,
   pointFloor,
   pointInList,
-  pointScale,
   pointSub,
   thickRasterCircles,
 } from "../utils";
@@ -182,7 +181,11 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private handlePointerDown({ global }: FederatedPointerEvent) {
     const { x, y } = global;
-    const tilePos = pointFloor(this.scaledForTiles({ x, y }));
+    const tilePos = pointFloor(
+      this._wordHuntGrid.scaleForTiles(
+        pointSub({ x, y }, this._gridRenderStart),
+      ),
+    );
     if (this.tileExists(tilePos)) {
       this._curPath = [tilePos];
       this._curWord = this._appState.grid[tilePos.y][tilePos.x] ?? "";
@@ -207,8 +210,12 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this.handlePointerUp();
     } else if (this._curPath.length > 0) {
       const affected = thickRasterCircles(
-        this.scaledForTiles(this._lastPos),
-        this.scaledForTiles({ x, y }),
+        this._wordHuntGrid.scaleForTiles(
+          pointSub(this._lastPos, this._gridRenderStart),
+        ),
+        this._wordHuntGrid.scaleForTiles(
+          pointSub({ x, y }, this._gridRenderStart),
+        ),
       );
       for (const tilePos of affected) {
         if (pointInList(this._curPath, tilePos)) {
@@ -232,23 +239,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
       }
     }
     this._lastPos = { x, y };
-  }
-
-  /** Scale the given pixel coordinates to logical coords in tile hit areas.
-   *
-   * e.g. for 100px tiles starting at (50, 50) a pos of (255, 345) would map to (2.05, 2.95)
-   */
-  private scaledForTiles(p: PointData): PointData {
-    return pointScale(
-      pointSub(
-        p,
-        pointSub(this._gridRenderStart, {
-          x: this._spacePx * 0.5,
-          y: this._spacePx * 0.5,
-        }),
-      ),
-      1 / (this._tilePx + this._spacePx),
-    );
   }
 
   /** Check if a tile at the given coordinates exists. */
