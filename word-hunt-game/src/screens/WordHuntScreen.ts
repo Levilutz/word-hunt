@@ -9,11 +9,10 @@ import {
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import theme, { type WordType } from "../theme";
-import WordHuntTile from "../ui/WordHuntTile";
+import WordHuntGrid from "../ui/WordHuntGrid";
 import {
   getTilePx,
   gridSize,
-  pointAdd,
   pointAdjacent,
   pointFloor,
   pointInList,
@@ -52,9 +51,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** Direct access to the hit area of `_hitcontainer` */
   private readonly _hitArea = new Rectangle();
 
-  /** All the child containers for every tile. */
-  private readonly tiles: (WordHuntTile | null)[][];
-
   /** The child container for graphics overlaid on top of the tiles. */
   private readonly _graphics = new Graphics();
 
@@ -81,6 +77,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** The type of the current word. */
   private _curWordType: WordType = "invalid";
 
+  private _wordHuntGrid: WordHuntGrid;
+
   constructor(appState: AppState, w: number, h: number) {
     super();
 
@@ -92,23 +90,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._hitArea.width = w;
     this._hitArea.height = h;
     this.updateCalculatedSizes();
-
-    this.tiles = this._appState.grid.map((row, y) =>
-      row.map((value, x) => {
-        if (value === null) {
-          return null;
-        }
-        const tilePos = this.getTilePos({ x, y });
-        const tile = new WordHuntTile(
-          tilePos.x,
-          tilePos.y,
-          this._tilePx,
-          value,
-        );
-        this.addChild(tile);
-        return tile;
-      }),
-    );
 
     this._curWordText.x = this._w / 2;
     this._curWordText.y = this._gridRenderStart.y - minVSpace * 0.5;
@@ -123,6 +104,17 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
     this.addChild(this._graphics);
     this.addChild(this._curWordText);
+
+    this._wordHuntGrid = new WordHuntGrid(
+      this._gridRenderStart.x,
+      this._gridRenderStart.y,
+      this._tilePx * this._gridSize.x + this._spacePx * (this._gridSize.x - 1),
+      this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
+      this._appState.grid,
+      this._curPath,
+      this._curWordType,
+    );
+    this.addChild(this._wordHuntGrid);
   }
 
   resize(w: number, h: number) {
@@ -133,16 +125,12 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._hitArea.height = h;
     this.updateCalculatedSizes();
 
-    // Update tile positions
-    this.tiles.forEach((row, y) => {
-      row.forEach((tile, x) => {
-        if (tile === null) {
-          return;
-        }
-        const tilePos = this.getTilePos({ x, y });
-        tile.setBounds(tilePos.x, tilePos.y, this._tilePx);
-      });
-    });
+    this._wordHuntGrid.resize(
+      this._gridRenderStart.x,
+      this._gridRenderStart.y,
+      this._tilePx * this._gridSize.x + this._spacePx * (this._gridSize.x - 1),
+      this._tilePx * this._gridSize.y + this._spacePx * (this._gridSize.y - 1),
+    );
 
     // Update text position
     this._curWordText.x = this._w / 2;
@@ -174,13 +162,6 @@ export default class WordHuntScreen extends Container implements AppScreen {
     };
   }
 
-  private getTilePos(coords: PointData): PointData {
-    return pointAdd(
-      pointScale(coords, this._tilePx + this._spacePx),
-      this._gridRenderStart,
-    );
-  }
-
   private handlePointerUp() {
     if (this._curPath.length === 0) {
       return;
@@ -195,15 +176,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
     this._curWord = "";
     this._curWordText.text = "";
     this._curWordType = "invalid";
+    this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
     this.updateGraphics();
-    this.tiles.forEach((row) => {
-      row.forEach((tile) => {
-        if (tile === null) {
-          return;
-        }
-        tile.setMode(undefined);
-      });
-    });
   }
 
   private handlePointerDown({ global }: FederatedPointerEvent) {
@@ -218,9 +192,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
           ? "valid-used"
           : "valid-new"
         : "invalid";
-      for (const tilePos of this._curPath) {
-        this.tiles[tilePos.y][tilePos.x]?.setMode(this._curWordType);
-      }
+      this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
     } else {
       this._curPath = [];
       this._curWord = "";
@@ -252,9 +224,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
               ? "valid-used"
               : "valid-new"
             : "invalid";
-          for (const tilePos of this._curPath) {
-            this.tiles[tilePos.y][tilePos.x]?.setMode(this._curWordType);
-          }
+          this._wordHuntGrid.updatePath(this._curPath, this._curWordType);
           this.updateGraphics();
         } else {
           break;
@@ -283,38 +253,13 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   /** Check if a tile at the given coordinates exists. */
   private tileExists(p: PointData) {
-    return this.tiles?.[p.y]?.[p.x] != null;
+    return this._appState.grid?.[p.y]?.[p.x] != null;
   }
 
   /** Update all graphics. */
   private updateGraphics() {
     this._graphics.clear();
-    this.renderPathLine();
     this.renderTextBg();
-  }
-
-  /** Render the path line */
-  private renderPathLine() {
-    if (this._curPath.length === 0) {
-      return;
-    }
-    const color = this._appState.trie.containsWord(this._curWord)
-      ? 0xffffff
-      : 0xff0000;
-    this._curPath.forEach((tileCoords, i) => {
-      const pos = pointAdd(this.getTilePos(tileCoords), {
-        x: this._tilePx * 0.5,
-        y: this._tilePx * 0.5,
-      });
-      if (i > 0) {
-        this._graphics
-          .lineTo(pos.x, pos.y)
-          .stroke({ width: this._tilePx * 0.1, color });
-      }
-      this._graphics.circle(pos.x, pos.y, this._tilePx * 0.05).fill({ color });
-      this._graphics.moveTo(pos.x, pos.y);
-    });
-    this._graphics.closePath();
   }
 
   /** Render the background on the current word text. */
