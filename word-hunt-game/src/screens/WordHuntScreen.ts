@@ -64,7 +64,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     style: {
       fill: 0x000000,
       fontSize: 24,
-      fontFamily: "Helvetica",
+      fontFamily: "Helvetica Neue Bold",
     },
   });
 

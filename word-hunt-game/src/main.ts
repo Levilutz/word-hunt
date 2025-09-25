@@ -1,10 +1,13 @@
-import { Application } from "pixi.js";
+import { Application, Assets } from "pixi.js";
 import "./style.css";
+import HelveticaNeueBold from "./assets/HelveticaNeue-Bold.otf";
 import { Trie } from "./core/trie";
 import Navigation from "./Navigation";
 import type { AppState } from "./State";
 
 (async () => {
+  await Assets.load(HelveticaNeueBold);
+
   const app = new Application();
 
   await app.init({

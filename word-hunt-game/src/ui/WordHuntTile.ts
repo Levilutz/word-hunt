@@ -19,8 +19,8 @@ export default class WordHuntTile extends Container {
       anchor: 0.5,
       style: {
         fill: 0x000000,
-        fontSize: this._w * 0.8,
-        fontFamily: "Helvetica",
+        fontSize: this._w * 0.7,
+        fontFamily: "Helvetica Neue Bold",
       },
     });
     this.addChild(this._text);
@@ -56,6 +56,6 @@ export default class WordHuntTile extends Container {
       .fill({ color: this._pressed ? 0xf8ead3 : 0xefcc92 });
     this._text.x = this._w * 0.5;
     this._text.y = this._w * 0.5;
-    this._text.style.fontSize = this._w * 0.8;
+    this._text.style.fontSize = this._w * 0.7;
   }
 }
