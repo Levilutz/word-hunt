@@ -8,6 +8,7 @@ import {
 } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
+import theme, { type WordType } from "../theme";
 import WordHuntTile from "../ui/WordHuntTile";
 import {
   getTilePx,
@@ -76,6 +77,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   /** The current word from pressed tiles. Must stay in-sync with `curPath`. */
   private _curWord: string = "";
+
+  /** The type of the current word. */
+  private _curWordType: WordType = "invalid";
 
   constructor(appState: AppState, w: number, h: number) {
     super();
@@ -181,17 +185,20 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (this._curPath.length === 0) {
       return;
     }
-    console.log(this._curWord);
+    if (this._appState.trie.containsWord(this._curWord)) {
+      this._appState.submittedWords.push(this._curWord);
+    }
     this._curPath = [];
     this._curWord = "";
     this._curWordText.text = "";
+    this._curWordType = "invalid";
     this.updateGraphics();
     this.tiles.forEach((row) => {
       row.forEach((tile) => {
         if (tile === null) {
           return;
         }
-        tile.setPressed(false);
+        tile.setMode(undefined);
       });
     });
   }
@@ -203,7 +210,14 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._curPath = [tilePos];
       this._curWord = this._appState.grid[tilePos.y][tilePos.x] ?? "";
       this._curWordText.text = this._curWord;
-      this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
+      this._curWordType = this._appState.trie.containsWord(this._curWord)
+        ? this._appState.submittedWords.includes(this._curWord)
+          ? "valid-used"
+          : "valid-new"
+        : "invalid";
+      for (const tilePos of this._curPath) {
+        this.tiles[tilePos.y][tilePos.x]?.setMode(this._curWordType);
+      }
     } else {
       this._curPath = [];
       this._curWord = "";
@@ -230,7 +244,14 @@ export default class WordHuntScreen extends Container implements AppScreen {
           this._curPath.push(tilePos);
           this._curWord += this._appState.grid[tilePos.y][tilePos.x] ?? "";
           this._curWordText.text = this._curWord;
-          this.tiles[tilePos.y][tilePos.x]?.setPressed(true);
+          this._curWordType = this._appState.trie.containsWord(this._curWord)
+            ? this._appState.submittedWords.includes(this._curWord)
+              ? "valid-used"
+              : "valid-new"
+            : "invalid";
+          for (const tilePos of this._curPath) {
+            this.tiles[tilePos.y][tilePos.x]?.setMode(this._curWordType);
+          }
           this.updateGraphics();
         } else {
           break;
@@ -298,7 +319,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (this._curPath.length === 0) {
       return;
     }
-    const color = 0xefcc92;
+    const color =
+      this._curWordType === "invalid"
+        ? theme.default
+        : theme.wordTypes[this._curWordType];
     const pad: PointData = { x: 10, y: 5 };
     this._graphics
       .roundRect(

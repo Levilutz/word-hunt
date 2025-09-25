@@ -1,17 +1,16 @@
 import { Container, Graphics, Text } from "pixi.js";
+import theme, { type WordType } from "../theme";
 
 export default class WordHuntTile extends Container {
   private _w: number;
-  private _pressed: boolean;
-  private readonly _graphics: Graphics;
+  private _mode: WordType | undefined = undefined;
+  private readonly _graphics = new Graphics();
   private _text: Text;
 
   constructor(x: number, y: number, width: number, content: string) {
     super({ x, y });
     this._w = width;
-    this._pressed = false;
 
-    this._graphics = new Graphics();
     this.addChild(this._graphics);
 
     this._text = new Text({
@@ -36,14 +35,14 @@ export default class WordHuntTile extends Container {
     this.render();
   }
 
-  setPressed(pressed: boolean) {
-    this._pressed = pressed;
+  setMode(mode: WordType | undefined) {
+    this._mode = mode;
 
     this.render();
   }
 
   private render() {
-    const pop = this._pressed ? 0.025 * this._w : 0;
+    const pop = this._mode !== undefined ? 0.025 * this._w : 0;
     this._graphics.clear();
     this._graphics
       .roundRect(
@@ -53,7 +52,12 @@ export default class WordHuntTile extends Container {
         this._w + 2 * pop,
         this._w * 0.25,
       )
-      .fill({ color: this._pressed ? 0xf8ead3 : 0xefcc92 });
+      .fill({
+        color:
+          this._mode !== undefined
+            ? theme.wordTypes[this._mode]
+            : theme.default,
+      });
     this._text.x = this._w * 0.5;
     this._text.y = this._w * 0.5;
     this._text.style.fontSize = this._w * 0.7;
