@@ -14,7 +14,15 @@ export default class WordHuntTile extends Container {
     this._graphics = new Graphics();
     this.addChild(this._graphics);
 
-    this._text = new Text({ text: content, anchor: 0.5 });
+    this._text = new Text({
+      text: content,
+      anchor: 0.5,
+      style: {
+        fill: 0x000000,
+        fontSize: this._w * 0.8,
+        fontFamily: "Helvetica",
+      },
+    });
     this.addChild(this._text);
 
     this.render();
@@ -23,7 +31,6 @@ export default class WordHuntTile extends Container {
   setBounds(x: number, y: number, width: number) {
     this.x = x;
     this.y = y;
-    this.setSize(width, width);
     this._w = width;
 
     this.render();
@@ -49,10 +56,6 @@ export default class WordHuntTile extends Container {
       .fill({ color: this._pressed ? 0xf8ead3 : 0xefcc92 });
     this._text.x = this._w * 0.5;
     this._text.y = this._w * 0.5;
-    this._text.style = {
-      fill: 0x000000,
-      fontSize: this._w * 0.8,
-      fontFamily: "Helvetica",
-    };
+    this._text.style.fontSize = this._w * 0.8;
   }
 }
