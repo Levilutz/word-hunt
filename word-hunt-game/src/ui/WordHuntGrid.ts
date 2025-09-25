@@ -80,6 +80,7 @@ export default class WordHuntGrid extends Container {
     this.renderPath();
   }
 
+  /** Resize and/or reposition the grid. */
   resize(x: number, y: number, w: number, h: number) {
     this.x = x;
     this.y = y;
@@ -98,6 +99,7 @@ export default class WordHuntGrid extends Container {
     this.renderPath();
   }
 
+  /** Update the path and word type. */
   updatePath(path: PointData[], wordType: WordType) {
     this._curPath = path;
     this._curWordType = wordType;
@@ -116,10 +118,20 @@ export default class WordHuntGrid extends Container {
     this.renderPath();
   }
 
+  /** Get the current path. */
   get path(): PointData[] {
     return this._curPath;
   }
 
+  /** Given a point in pixel space, scale it to logical tile space. */
+  scaleForTiles(p: PointData): PointData {
+    return pointScale(
+      pointAdd(p, { x: this._spacePx * 0.5, y: this._spacePx * 0.5 }),
+      1 / (this._tilePx + this._spacePx),
+    );
+  }
+
+  /** Update the calculated tilePx and spacePx based on new _w and _h. */
   private updateCalculatedSizes() {
     this._tilePx = Math.min(
       getTilePx(this._w, TILE_SPACE_RATIO, this._gridSize.x),
@@ -128,6 +140,7 @@ export default class WordHuntGrid extends Container {
     this._spacePx = this._tilePx * TILE_SPACE_RATIO;
   }
 
+  /** Render the path over the tiles. */
   private renderPath() {
     this._path.clear();
     if (this._curPath.length === 0) {
