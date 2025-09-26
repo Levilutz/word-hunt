@@ -4,6 +4,7 @@ import type { AppState } from "../State";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
+import Scoreboard from "../ui/Scoreboard";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global app state. */
@@ -19,13 +20,16 @@ export default class WordHuntScreen extends Container implements AppScreen {
   private _curPath: PointData[] = [];
 
   /** A child container for the grid of tiles. */
-  private _wordHuntGrid: WordHuntGrid;
+  private readonly _wordHuntGrid: WordHuntGrid;
 
   /** A child container for managing the hit area over the grid. */
-  private _wordHuntGridHitArea: WordHuntGridHitArea;
+  private readonly _wordHuntGridHitArea: WordHuntGridHitArea;
 
   /** A child container for showing the currently-selected word. */
-  private _curWordPreview: WordHuntWord;
+  private readonly _curWordPreview: WordHuntWord;
+
+  /** A child container for the scoreboard. */
+  private readonly _scoreboard: Scoreboard;
 
   constructor(appState: AppState, w: number, h: number) {
     super();
@@ -46,17 +50,27 @@ export default class WordHuntScreen extends Container implements AppScreen {
       "invalid",
     );
     this.addChild(this._wordHuntGrid);
+
     this._curWordPreview = new WordHuntWord(this._w / 2, 250, "", undefined);
     this.addChild(this._curWordPreview);
+
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
       this._w,
       this._h,
       this._wordHuntGrid,
       this.handlePathHover.bind(this),
       this.handlePathSubmit.bind(this),
-      true,
     );
     this.addChild(this._wordHuntGridHitArea);
+
+    const scoreboardW = Math.min(this._w, 500);
+    this._scoreboard = new Scoreboard(
+      (this._w - scoreboardW) * 0.5,
+      0,
+      scoreboardW,
+      240,
+    );
+    this.addChild(this._scoreboard);
   }
 
   resize(w: number, h: number) {
@@ -71,9 +85,14 @@ export default class WordHuntScreen extends Container implements AppScreen {
       Math.max(this._h - 350, 100),
     );
     this._wordHuntGridHitArea.resize(this._w, this._h);
-
-    // Update text position
     this._curWordPreview.setPos(this._w / 2, 250);
+    const scoreboardW = Math.min(this._w - 20, 400);
+    this._scoreboard.setBounds(
+      (this._w - scoreboardW) * 0.5,
+      0,
+      scoreboardW,
+      240,
+    );
   }
 
   private handlePathHover(path: PointData[]) {
