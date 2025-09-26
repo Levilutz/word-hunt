@@ -1,3 +1,4 @@
+import gsap from "gsap";
 import { Container, type PointData } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
@@ -127,7 +128,29 @@ export default class WordHuntScreen extends Container implements AppScreen {
         this._appState.score,
         this._appState.submittedWords.length,
       );
+      this.toastPoints(pointsForWord(_curWord));
     }
     this.handlePathHover([]);
+  }
+
+  private toastPoints(points: number) {
+    if (points <= 0) {
+      return;
+    }
+    const toastChip = new WordHuntWord(
+      this._w / 2,
+      270,
+      `+${points}`,
+      "valid-new",
+    );
+    this.addChild(toastChip);
+    gsap.to(toastChip, {
+      y: 180,
+      alpha: 0,
+      onComplete: () => {
+        this.removeChild(toastChip);
+        toastChip.destroy({ children: true });
+      },
+    });
   }
 }

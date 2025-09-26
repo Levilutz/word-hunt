@@ -22,6 +22,8 @@ export default class WordHuntWord extends Container {
       },
     });
     this.addChild(this._text);
+
+    this.renderBg();
   }
 
   setPos(x: number, y: number) {

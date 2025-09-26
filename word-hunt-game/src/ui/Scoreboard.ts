@@ -1,7 +1,7 @@
+import gsap from "gsap";
 import { Container, Graphics, Text } from "pixi.js";
 import theme from "../theme";
 import { formatMinuteSecond } from "../utils";
-import gsap from "gsap";
 
 const TOP_PAD = 10;
 
