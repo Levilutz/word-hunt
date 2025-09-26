@@ -1,12 +1,15 @@
 import { Application, Assets } from "pixi.js";
 import "./style.css";
 import HelveticaNeueBold from "./assets/HelveticaNeue-Bold.otf";
+import dud from "./assets/dud.ogg";
 import { Trie } from "./core/trie";
 import Navigation from "./Navigation";
 import type { AppState } from "./State";
+import { sound } from "@pixi/sound";
 
 (async () => {
   await Assets.load(HelveticaNeueBold);
+  sound.add("dud", dud);
 
   const app = new Application();
 

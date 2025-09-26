@@ -7,6 +7,7 @@ import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
 import { pointsForWord } from "../utils";
+import { sound } from "@pixi/sound";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global app state. */
@@ -112,6 +113,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
       : "invalid";
     this._curWordPreview.setContent(_curWord, curWordType);
     this._wordHuntGrid.updatePath(this._curPath, curWordType);
+    if (curWordType === "invalid") {
+      sound.play("dud");
+    }
   }
 
   private handlePathSubmit(path: PointData[]) {
