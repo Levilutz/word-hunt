@@ -5,6 +5,7 @@ import Scoreboard from "../ui/Scoreboard";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
+import { pointsForWord } from "../utils";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global app state. */
@@ -69,6 +70,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
       10,
       scoreboardW,
       120,
+      this._appState.score,
+      this._appState.submittedWords.length,
+      Date.now() + 78500,
     );
     this.addChild(this._scoreboard);
   }
@@ -118,6 +122,11 @@ export default class WordHuntScreen extends Container implements AppScreen {
       !this._appState.submittedWords.includes(_curWord)
     ) {
       this._appState.submittedWords.push(_curWord);
+      this._appState.score += pointsForWord(_curWord);
+      this._scoreboard.setScore(
+        this._appState.score,
+        this._appState.submittedWords.length,
+      );
     }
     this.handlePathHover([]);
   }

@@ -1,11 +1,13 @@
 import { Container, Graphics, Text } from "pixi.js";
 import theme from "../theme";
+import { formatMinuteSecond } from "../utils";
 
 const TOP_PAD = 10;
 
 export default class Scoreboard extends Container {
   private _w: number;
   private _h: number;
+  private _endTimeMs: number;
 
   /** The background graphics. */
   private readonly _bg = new Graphics();
@@ -19,17 +21,26 @@ export default class Scoreboard extends Container {
   /** Text representing the timer. */
   private readonly _timerText: Text;
 
-  constructor(x: number, y: number, width: number, height: number) {
+  constructor(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    score: number,
+    numWords: number,
+    endTimeMs: number,
+  ) {
     super({ x, y });
     this._w = width;
     this._h = height;
+    this._endTimeMs = endTimeMs;
 
     this.addChild(this._bg);
 
     this._pointsText = new Text({
       x: 20,
       y: TOP_PAD,
-      text: "10800",
+      text: score.toString(),
       anchor: { x: 0, y: 0 },
       style: {
         align: "center",
@@ -43,7 +54,7 @@ export default class Scoreboard extends Container {
     this._numWordsText = new Text({
       x: 20,
       y: TOP_PAD + 48,
-      text: "WORDS: 27",
+      text: `WORDS: ${numWords}`,
       anchor: { x: 0, y: 0 },
       style: {
         align: "center",
@@ -57,7 +68,7 @@ export default class Scoreboard extends Container {
     this._timerText = new Text({
       x: this._w - 20,
       y: TOP_PAD,
-      text: "01:18",
+      text: formatMinuteSecond((endTimeMs - Date.now()) / 1000),
       anchor: { x: 1, y: 0 },
       style: {
         align: "center",
@@ -87,6 +98,17 @@ export default class Scoreboard extends Container {
     this._timerText.y = TOP_PAD;
 
     this.updateBg();
+  }
+
+  setScore(score: number, words: number) {
+    this._pointsText.text = score.toString();
+    this._numWordsText.text = `WORDS: ${words}`;
+  }
+
+  renderTimer() {
+    this._timerText.text = formatMinuteSecond(
+      (this._endTimeMs - Date.now()) / 1000,
+    );
   }
 
   private updateBg() {

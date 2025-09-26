@@ -4,4 +4,5 @@ export type AppState = {
   trie: Trie;
   grid: (string | null)[][];
   submittedWords: string[];
+  score: number;
 };

@@ -195,3 +195,21 @@ export function gridSize<T>(grid: T[][]): PointData {
     y: grid.length,
   };
 }
+
+/** Format the given number of seconds as minutes and seconds. */
+export function formatMinuteSecond(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${Math.round(seconds) % 60}`;
+}
+
+/** How many points are awarded for the given word */
+export function pointsForWord(word: string): number {
+  const pointMap: Record<number, number> = {
+    3: 100,
+    4: 400,
+    5: 800,
+    6: 1400,
+    7: 1800,
+    8: 2200,
+  };
+  return pointMap[word.length] ?? 0;
+}

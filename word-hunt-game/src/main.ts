@@ -26,6 +26,7 @@ import type { AppState } from "./State";
       ["M", "N", "O", "P"],
     ],
     submittedWords: [],
+    score: 0,
   };
 
   app.renderer.canvas.style.width = `${window.innerWidth}px`;
