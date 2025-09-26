@@ -1,10 +1,10 @@
 import { Container, type PointData } from "pixi.js";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
+import Scoreboard from "../ui/Scoreboard";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
-import Scoreboard from "../ui/Scoreboard";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global app state. */
