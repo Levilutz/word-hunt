@@ -16,9 +16,6 @@ export default class Scoreboard extends Container {
   /** Text representing the current number of words. */
   private readonly _numWordsText: Text;
 
-  /** Text representing the number of points from the last word. */
-  private readonly _lastWordPointsText: Text;
-
   /** Text representing the timer. */
   private readonly _timerText: Text;
 
@@ -30,13 +27,13 @@ export default class Scoreboard extends Container {
     this.addChild(this._bg);
 
     this._pointsText = new Text({
-      x: this._w * 0.5,
+      x: 20,
       y: TOP_PAD,
-      text: "POINTS\n4500\n18200",
-      anchor: { x: 0.5, y: 0 },
+      text: "10800",
+      anchor: { x: 0, y: 0 },
       style: {
         align: "center",
-        fontSize: 36,
+        fontSize: 48,
         fontFamily: "Helvetica Neue Bold",
         lineHeight: 50,
       },
@@ -44,10 +41,10 @@ export default class Scoreboard extends Container {
     this.addChild(this._pointsText);
 
     this._numWordsText = new Text({
-      x: this._w * 0.15,
-      y: TOP_PAD,
-      text: "WORDS\n21\n41",
-      anchor: { x: 0.5, y: 0 },
+      x: 20,
+      y: TOP_PAD + 48,
+      text: "WORDS: 27",
+      anchor: { x: 0, y: 0 },
       style: {
         align: "center",
         fontSize: 24,
@@ -57,25 +54,11 @@ export default class Scoreboard extends Container {
     });
     this.addChild(this._numWordsText);
 
-    this._lastWordPointsText = new Text({
-      x: this._w * 0.85,
-      y: TOP_PAD,
-      text: "LAST\n+400\n+2200",
-      anchor: { x: 0.5, y: 0 },
-      style: {
-        align: "center",
-        fontSize: 24,
-        fontFamily: "Helvetica Neue Bold",
-        lineHeight: 50,
-      },
-    });
-    this.addChild(this._lastWordPointsText);
-
     this._timerText = new Text({
-      x: this._w * 0.5,
-      y: this._h - 10,
+      x: this._w - 20,
+      y: TOP_PAD,
       text: "01:18",
-      anchor: { x: 0.5, y: 1 },
+      anchor: { x: 1, y: 0 },
       style: {
         align: "center",
         fontSize: 48,
@@ -94,17 +77,14 @@ export default class Scoreboard extends Container {
     this._w = width;
     this._h = height;
 
-    this._pointsText.x = this._w * 0.5;
+    this._pointsText.x = 20;
     this._pointsText.y = TOP_PAD;
 
-    this._numWordsText.x = this._w * 0.15;
-    this._numWordsText.y = TOP_PAD;
+    this._numWordsText.x = 20;
+    this._numWordsText.y = TOP_PAD + 48;
 
-    this._lastWordPointsText.x = this._w * 0.85;
-    this._lastWordPointsText.y = TOP_PAD;
-
-    this._timerText.x = this._w * 0.5;
-    this._timerText.y = this._h - 10;
+    this._timerText.x = this._w - 20;
+    this._timerText.y = TOP_PAD;
 
     this.updateBg();
   }
@@ -112,7 +92,7 @@ export default class Scoreboard extends Container {
   private updateBg() {
     this._bg.clear();
     this._bg
-      .rect(0, 0, this._w, this._h)
+      .roundRect(0, 0, this._w, this._h, 10)
       .fill({ color: theme.wordTypes.invalid });
   }
 }

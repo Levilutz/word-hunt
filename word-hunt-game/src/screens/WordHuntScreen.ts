@@ -51,7 +51,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     );
     this.addChild(this._wordHuntGrid);
 
-    this._curWordPreview = new WordHuntWord(this._w / 2, 250, "", undefined);
+    this._curWordPreview = new WordHuntWord(this._w / 2, 270, "", undefined);
     this.addChild(this._curWordPreview);
 
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
@@ -66,9 +66,9 @@ export default class WordHuntScreen extends Container implements AppScreen {
     const scoreboardW = Math.min(this._w, 500);
     this._scoreboard = new Scoreboard(
       (this._w - scoreboardW) * 0.5,
-      0,
+      10,
       scoreboardW,
-      240,
+      120,
     );
     this.addChild(this._scoreboard);
   }
@@ -85,13 +85,13 @@ export default class WordHuntScreen extends Container implements AppScreen {
       Math.max(this._h - 350, 100),
     );
     this._wordHuntGridHitArea.resize(this._w, this._h);
-    this._curWordPreview.setPos(this._w / 2, 250);
+    this._curWordPreview.setPos(this._w / 2, 270);
     const scoreboardW = Math.min(this._w - 20, 400);
     this._scoreboard.setBounds(
       (this._w - scoreboardW) * 0.5,
-      0,
+      10,
       scoreboardW,
-      240,
+      120,
     );
   }
 
