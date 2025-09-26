@@ -1,6 +1,7 @@
 import { Container, Graphics, Text } from "pixi.js";
 import theme from "../theme";
 import { formatMinuteSecond } from "../utils";
+import gsap from "gsap";
 
 const TOP_PAD = 10;
 
@@ -40,7 +41,7 @@ export default class Scoreboard extends Container {
     this._pointsText = new Text({
       x: 20,
       y: TOP_PAD,
-      text: score.toString(),
+      text: score,
       anchor: { x: 0, y: 0 },
       style: {
         align: "center",
@@ -101,7 +102,13 @@ export default class Scoreboard extends Container {
   }
 
   setScore(score: number, words: number) {
-    this._pointsText.text = score.toString();
+    gsap.to(this._pointsText, {
+      // biome-ignore lint/suspicious/noExplicitAny: Overly restrictive type from gsap
+      text: score as any,
+      duration: 0.5,
+      ease: "power4.out",
+      modifiers: { text: (score) => Math.round(score) },
+    });
     this._numWordsText.text = `WORDS: ${words}`;
   }
 
