@@ -21,7 +21,27 @@ import { sound } from "@pixi/sound";
   });
 
   const appState: AppState = {
-    trie: new Trie(["A", "ABC", "ABCH", "ABCHG"]),
+    trie: new Trie([
+      "CHLONK",
+      "KNIFE",
+      "PLONK",
+      "FINK",
+      "FINO",
+      "GLOP",
+      "JINK",
+      "KOJI",
+      "KNOP",
+      "MINK",
+      "FAB",
+      "FIE",
+      "FIN",
+      "INK",
+      "JIN",
+      "KOP",
+      "LOP",
+      "NIM",
+      "POL",
+    ]),
     grid: [
       ["A", "B", "C", "D"],
       ["E", "F", "G", "H"],
