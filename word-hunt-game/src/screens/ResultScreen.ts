@@ -1,4 +1,5 @@
 import { sound } from "@pixi/sound";
+import gsap from "gsap";
 import { Container, Graphics } from "pixi.js";
 import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
@@ -7,7 +8,6 @@ import Button from "../ui/Button";
 import ScrollHitArea from "../ui/ScrollHitArea";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntWord from "../ui/WordHuntWord";
-import gsap from "gsap";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
