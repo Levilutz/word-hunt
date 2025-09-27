@@ -1,5 +1,5 @@
 import gsap from "gsap";
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Text, type DestroyOptions } from "pixi.js";
 import theme from "../theme";
 import { formatMinuteSecond } from "../utils";
 
@@ -21,6 +21,9 @@ export default class Scoreboard extends Container {
 
   /** Text representing the timer. */
   private readonly _timerText: Text;
+
+  /** Interval ID for the interval to refresh the timer text. */
+  private readonly _timerIntervalId: number;
 
   constructor(
     x: number,
@@ -81,6 +84,8 @@ export default class Scoreboard extends Container {
     this.addChild(this._timerText);
 
     this.updateBg();
+
+    this._timerIntervalId = setInterval(this.renderTimer.bind(this), 100);
   }
 
   setBounds(x: number, y: number, width: number, height: number) {
@@ -116,6 +121,11 @@ export default class Scoreboard extends Container {
     this._timerText.text = formatMinuteSecond(
       (this._endTimeMs - Date.now()) / 1000,
     );
+  }
+
+  destroy(options?: DestroyOptions) {
+    clearInterval(this._timerIntervalId);
+    super.destroy(options);
   }
 
   private updateBg() {

@@ -5,4 +5,5 @@ export type AppState = {
   grid: (string | null)[][];
   submittedWords: string[];
   score: number;
+  endTimeMs: number;
 };

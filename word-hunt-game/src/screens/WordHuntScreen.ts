@@ -80,7 +80,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       120,
       this._appState.score,
       this._appState.submittedWords.length,
-      Date.now() + 78500,
+      this._appState.endTimeMs,
     );
     this.addChild(this._scoreboard);
   }

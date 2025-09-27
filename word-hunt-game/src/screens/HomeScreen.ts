@@ -78,6 +78,7 @@ export default class HomeScreen extends Container implements AppScreen {
     ];
     this._appState.submittedWords = [];
     this._appState.score = 0;
-    this._nav.goToScreen(WordHuntScreen);
+    (this._appState.endTimeMs = Date.now() + 80000),
+      this._nav.goToScreen(WordHuntScreen);
   }
 }

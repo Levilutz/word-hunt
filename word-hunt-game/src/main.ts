@@ -44,6 +44,7 @@ import type { AppState } from "./State";
     grid: [],
     submittedWords: [],
     score: 0,
+    endTimeMs: 0,
   };
 
   app.renderer.canvas.style.width = `${window.innerWidth}px`;
