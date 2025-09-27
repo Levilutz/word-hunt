@@ -1,7 +1,13 @@
 import { Application, Assets } from "pixi.js";
 import "./style.css";
 import HelveticaNeueBold from "./assets/HelveticaNeue-Bold.otf";
-import dud from "./assets/dud.ogg";
+import click from "./assets/bell72.ogg";
+import trill1 from "./assets/trill1.ogg";
+import trill2 from "./assets/trill2.ogg";
+import trill3 from "./assets/trill3.ogg";
+import trill4 from "./assets/trill4.ogg";
+import trill5 from "./assets/trill5.ogg";
+import trill6 from "./assets/trill6.ogg";
 import { Trie } from "./core/trie";
 import Navigation from "./Navigation";
 import type { AppState } from "./State";
@@ -9,7 +15,19 @@ import { sound } from "@pixi/sound";
 
 (async () => {
   await Assets.load(HelveticaNeueBold);
-  sound.add("dud", dud);
+  sound.add("click", click);
+  sound.add("trill1", trill1);
+  sound.add("trill2", trill2);
+  sound.add("trill3", trill3);
+  sound.add("trill4", trill4);
+  sound.add("trill5", trill5);
+  sound.add("trill6", trill6);
+
+  const playAudio = () => {
+    sound.play("click", { volume: 0 });
+    document.removeEventListener("pointerdown", playAudio);
+  };
+  document.addEventListener("pointerdown", playAudio);
 
   const app = new Application();
 
