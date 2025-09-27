@@ -13,6 +13,7 @@ export default class Button extends Container {
   private readonly _onPress?: () => void;
   private readonly _onRelease?: () => void;
   private _pressed = false;
+  private readonly _boundHandlePointerUp: () => void;
 
   constructor(
     x: number,
@@ -36,7 +37,9 @@ export default class Button extends Container {
     });
     this.addChild(this._text);
     this.renderBg();
-    document.addEventListener("pointerup", this.handlePointerUp.bind(this));
+
+    this._boundHandlePointerUp = this.handlePointerUp.bind(this);
+    document.addEventListener("pointerup", this._boundHandlePointerUp);
     this.on("pointerdown", this.handlePointerDown.bind(this));
   }
 
@@ -52,7 +55,7 @@ export default class Button extends Container {
   }
 
   destroy(options?: DestroyOptions) {
-    document.removeEventListener("pointerup", this.handlePointerUp.bind(this));
+    document.removeEventListener("pointerup", this._boundHandlePointerUp);
     super.destroy(options);
   }
 
