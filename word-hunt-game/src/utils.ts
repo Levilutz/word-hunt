@@ -155,14 +155,18 @@ export function thickRaster(a: PointData, b: PointData): PointData[] {
  *
  * @returns index coords of circles in order.
  * */
-export function thickRasterCircles(a: PointData, b: PointData): PointData[] {
+export function thickRasterCircles(
+  a: PointData,
+  b: PointData,
+  radius?: number,
+): PointData[] {
   return thickRaster(a, b).filter(
     (pos) =>
       lineCircleIntersectionScalar(
         a,
         b,
         { x: pos.x + 0.5, y: pos.y + 0.5 },
-        0.5,
+        radius ?? 0.5,
       ).t !== undefined,
   );
 }
