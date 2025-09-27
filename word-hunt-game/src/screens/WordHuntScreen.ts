@@ -58,6 +58,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._appState.grid,
       this._curPath,
       "invalid",
+      0.01,
     );
     this.addChild(this._wordHuntGrid);
 
@@ -85,6 +86,8 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this.handleTimerFinish.bind(this),
     );
     this.addChild(this._scoreboard);
+
+    gsap.to(this._wordHuntGrid, { tileScale: 1, duration: 0.1 });
   }
 
   resize(w: number, h: number) {

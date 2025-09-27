@@ -138,6 +138,11 @@ export default class WordHuntGrid extends Container {
     this.renderPath();
   }
 
+  /** Get the visual tile scale (for animation). */
+  get tileScale(): number {
+    return this._tileScale;
+  }
+
   /** Set the visual tile scale (for animation). */
   set tileScale(tileScale: number) {
     if (tileScale === this._tileScale) {
