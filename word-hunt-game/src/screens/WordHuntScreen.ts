@@ -10,6 +10,7 @@ import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
 import { pointsForWord } from "../utils";
+import ResultScreen from "./ResultScreen";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -81,6 +82,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this._appState.score,
       this._appState.submittedWords.length,
       this._appState.endTimeMs,
+      this.handleTimerFinish.bind(this),
     );
     this.addChild(this._scoreboard);
   }
@@ -140,6 +142,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
       this.playWordSubmitSound(curWord);
     }
     this.handlePathHover([]);
+  }
+
+  private handleTimerFinish() {
+    this._nav.goToScreen(ResultScreen);
   }
 
   private toastPoints(points: number) {
