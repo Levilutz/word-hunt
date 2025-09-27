@@ -8,6 +8,7 @@ import Button from "../ui/Button";
 import ScrollHitArea from "../ui/ScrollHitArea";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntWord from "../ui/WordHuntWord";
+import { pointsForWord } from "../utils";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -39,6 +40,9 @@ export default class ResultScreen extends Container implements AppScreen {
 
   /** A mask for ensuring words out of bounds don't render. */
   private _wordsMask: Graphics;
+
+  /** The point values for each word to render in a list. */
+  private _wordPoints: WordHuntWord[];
 
   /** The words to render in a list. */
   private _words: WordHuntWord[];
@@ -112,6 +116,10 @@ export default class ResultScreen extends Container implements AppScreen {
             this._w / 2,
             this._h / 2 + 25 + i * 50 - this._wordsScroll,
           );
+          this._wordPoints[i].setPos(
+            this._w / 2 - 30,
+            this._h / 2 + 25 + i * 50 - this._wordsScroll,
+          );
         });
       },
     );
@@ -130,7 +138,27 @@ export default class ResultScreen extends Container implements AppScreen {
           this._h / 2 + 25 + i * 50 + this._wordsScroll,
           {
             text: ans.word,
-            anchor: { x: 0.5, y: 0 },
+            anchor: { x: 0, y: 0 },
+            onPointerDown: () => this.handleWordClicked(i),
+          },
+        );
+        word.mask = this._wordsMask;
+        this.addChild(word);
+        return word;
+      },
+    );
+
+    this._wordPoints = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
+      (ans, i) => {
+        const word = new WordHuntWord(
+          this._w / 2 - 30,
+          this._h / 2 + 25 + i * 50 + this._wordsScroll,
+          {
+            text: `+${pointsForWord(ans.word)}`,
+            mode: this._appState.submittedWords.includes(ans.word)
+              ? "valid-new"
+              : "invalid",
+            anchor: { x: 1, y: 0 },
             onPointerDown: () => this.handleWordClicked(i),
           },
         );
