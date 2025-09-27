@@ -7,6 +7,7 @@ import Button from "../ui/Button";
 import ScrollHitArea from "../ui/ScrollHitArea";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntWord from "../ui/WordHuntWord";
+import gsap from "gsap";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -47,6 +48,8 @@ export default class ResultScreen extends Container implements AppScreen {
 
   /** The index of the path selected. */
   private _selectedPathInd: number = 0;
+
+  private _curPathTween?: gsap.core.Tween;
 
   constructor(nav: Navigation, appState: AppState, w: number, h: number) {
     super();
@@ -165,12 +168,11 @@ export default class ResultScreen extends Container implements AppScreen {
       }
       this._selectedInd = ind;
       this._selectedPathInd = 0;
-      this._words[ind].setContent(
-        this._appState.gridAnalysis?.possibleAnswers?.[ind]?.word ?? "",
-        "invalid",
-      );
+      const possibleAnswer =
+        this._appState.gridAnalysis?.possibleAnswers?.[ind];
+      this._words[ind].setContent(possibleAnswer?.word ?? "", "invalid");
       this._wordHuntGrid.updatePath(
-        this._appState.gridAnalysis?.possibleAnswers?.[ind]?.paths?.[0] ?? [],
+        possibleAnswer?.paths?.[0] ?? [],
         "valid-new",
       );
       this.handlePathPage(0);
@@ -206,5 +208,15 @@ export default class ResultScreen extends Container implements AppScreen {
         ?.paths?.[this._selectedPathInd] ?? [],
       "valid-new",
     );
+    if (this._curPathTween !== undefined) {
+      this._curPathTween.kill();
+    }
+    this._wordHuntGrid.pathRenderSteps = 0;
+    this._curPathTween = gsap.to(this._wordHuntGrid, {
+      pathRenderSteps:
+        this._appState.gridAnalysis?.possibleAnswers?.[this._selectedInd]?.word
+          ?.length ?? 1,
+      duration: 1,
+    });
   }
 }
