@@ -28,6 +28,10 @@ export default class WordHuntTile extends Container {
   }
 
   setBounds(x: number, y: number, width: number) {
+    if (this._position === null) {
+      return;
+    }
+
     this.x = x;
     this.y = y;
     this._w = width;

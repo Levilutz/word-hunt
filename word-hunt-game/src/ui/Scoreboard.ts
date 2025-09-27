@@ -123,11 +123,13 @@ export default class Scoreboard extends Container {
   }
 
   updateTimer() {
-    this._timerText.text = formatMinuteSecond(
-      (this._endTimeMs - Date.now()) / 1000,
-    );
     if (Date.now() > this._endTimeMs) {
+      this._timerText.text = "0:00";
       this._onTimerFinish?.();
+    } else {
+      this._timerText.text = formatMinuteSecond(
+        (this._endTimeMs - Date.now()) / 1000,
+      );
     }
   }
 

@@ -148,7 +148,18 @@ export default class WordHuntScreen extends Container implements AppScreen {
   }
 
   private handleTimerFinish() {
-    this._nav.goToScreen(ResultScreen);
+    this._curPath = [];
+    this._curWordPreview.setContent("", undefined);
+    this._wordHuntGrid.updatePath([], "invalid");
+    this.removeChild(this._wordHuntGridHitArea);
+    this._wordHuntGridHitArea.destroy({ children: true });
+    gsap.to(this._wordHuntGrid, {
+      tileScale: 0.01,
+      duration: 1,
+      onComplete: () => {
+        this._nav.goToScreen(ResultScreen);
+      },
+    });
   }
 
   private toastPoints(points: number) {
