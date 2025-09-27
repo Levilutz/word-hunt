@@ -1,11 +1,11 @@
+import { sound } from "@pixi/sound";
 import { Container } from "pixi.js";
+import { Trie } from "../core/trie";
+import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import Button from "../ui/Button";
-import type Navigation from "../Navigation";
-import { sound } from "@pixi/sound";
 import WordHuntScreen from "./WordHuntScreen";
-import { Trie } from "../core/trie";
 
 export default class HomeScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -78,7 +78,7 @@ export default class HomeScreen extends Container implements AppScreen {
     ];
     this._appState.submittedWords = [];
     this._appState.score = 0;
-    (this._appState.endTimeMs = Date.now() + 80000),
-      this._nav.goToScreen(WordHuntScreen);
+    this._appState.endTimeMs = Date.now() + 80000;
+    this._nav.goToScreen(WordHuntScreen);
   }
 }

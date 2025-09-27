@@ -1,6 +1,7 @@
 import { sound } from "@pixi/sound";
 import gsap from "gsap";
 import { Container, type PointData } from "pixi.js";
+import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import type { WordType } from "../theme";
@@ -9,7 +10,6 @@ import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
 import { pointsForWord } from "../utils";
-import type Navigation from "../Navigation";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
