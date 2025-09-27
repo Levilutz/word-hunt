@@ -4,6 +4,8 @@ import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntWord from "../ui/WordHuntWord";
+import Button from "../ui/Button";
+import { sound } from "@pixi/sound";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -21,11 +23,20 @@ export default class ResultScreen extends Container implements AppScreen {
   /** The grid. */
   private _wordHuntGrid: WordHuntGrid;
 
+  /** The button to click left through paths. */
+  private _leftButton: Button;
+
+  /** The button to click right through paths. */
+  private _rightButton: Button;
+
   /** The words to render in a list. */
   private _words: WordHuntWord[];
 
   /** The index of the currently-selected possible answer. */
   private _selectedInd?: number;
+
+  /** The index of the path selected. */
+  private _selectedPathInd: number = 0;
 
   constructor(nav: Navigation, appState: AppState, w: number, h: number) {
     super();
@@ -47,6 +58,32 @@ export default class ResultScreen extends Container implements AppScreen {
     );
     this.addChild(this._wordHuntGrid);
 
+    this._leftButton = new Button(
+      this._w * 0.5 - 25,
+      this._h * 0.5 - 15,
+      "",
+      () => {
+        sound.play("click");
+      },
+      () => {
+        this.handlePathPage(-1);
+      },
+    );
+    this.addChild(this._leftButton);
+
+    this._rightButton = new Button(
+      this._w * 0.5 + 25,
+      this._h * 0.5 - 15,
+      "",
+      () => {
+        sound.play("click");
+      },
+      () => {
+        this.handlePathPage(1);
+      },
+    );
+    this.addChild(this._rightButton);
+
     this._words = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
       (ans, i) => {
         const word = new WordHuntWord(this._w / 2, this._h / 2 + 25 + i * 50, {
@@ -66,6 +103,7 @@ export default class ResultScreen extends Container implements AppScreen {
   }
 
   private handleWordClicked(ind: number) {
+    sound.play("click");
     if (ind === this._selectedInd) {
       this._selectedInd = undefined;
       this._words[ind].setContent(
@@ -73,6 +111,8 @@ export default class ResultScreen extends Container implements AppScreen {
         undefined,
       );
       this._wordHuntGrid.updatePath([], "invalid");
+      this._leftButton.setContent("");
+      this._rightButton.setContent("");
     } else {
       if (this._selectedInd !== undefined) {
         this._words[this._selectedInd].setContent(
@@ -82,6 +122,7 @@ export default class ResultScreen extends Container implements AppScreen {
         );
       }
       this._selectedInd = ind;
+      this._selectedPathInd = 0;
       this._words[ind].setContent(
         this._appState.gridAnalysis?.possibleAnswers?.[ind]?.word ?? "",
         "invalid",
@@ -90,6 +131,38 @@ export default class ResultScreen extends Container implements AppScreen {
         this._appState.gridAnalysis?.possibleAnswers?.[ind]?.paths?.[0] ?? [],
         "valid-new",
       );
+      this.handlePathPage(0);
     }
+  }
+
+  private handlePathPage(dir: number) {
+    if (this._selectedInd === undefined) {
+      return;
+    }
+    const paths =
+      this._appState.gridAnalysis?.possibleAnswers[this._selectedInd].paths ??
+      [];
+    if (
+      this._selectedPathInd + dir < 0 ||
+      this._selectedPathInd + dir >= paths.length
+    ) {
+      return;
+    }
+    this._selectedPathInd += dir;
+    if (this._selectedPathInd === 0) {
+      this._leftButton.setContent("");
+    } else {
+      this._leftButton.setContent("<");
+    }
+    if (this._selectedPathInd === paths.length - 1) {
+      this._rightButton.setContent("");
+    } else {
+      this._rightButton.setContent(">");
+    }
+    this._wordHuntGrid.updatePath(
+      this._appState.gridAnalysis?.possibleAnswers?.[this._selectedInd]
+        ?.paths?.[this._selectedPathInd] ?? [],
+      "valid-new",
+    );
   }
 }
