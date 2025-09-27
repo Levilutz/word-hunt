@@ -69,7 +69,7 @@ export default class ResultScreen extends Container implements AppScreen {
     this.addChild(this._wordHuntGrid);
 
     this._leftButton = new Button(
-      this._w * 0.5 - 25,
+      this._w * 0.5 - 30,
       this._h * 0.5 - 25,
       "",
       () => {
@@ -82,7 +82,7 @@ export default class ResultScreen extends Container implements AppScreen {
     this.addChild(this._leftButton);
 
     this._rightButton = new Button(
-      this._w * 0.5 + 25,
+      this._w * 0.5 + 30,
       this._h * 0.5 - 25,
       "",
       () => {
@@ -194,12 +194,12 @@ export default class ResultScreen extends Container implements AppScreen {
     if (this._selectedPathInd === 0) {
       this._leftButton.setContent("");
     } else {
-      this._leftButton.setContent("<");
+      this._leftButton.setContent("<-");
     }
     if (this._selectedPathInd === paths.length - 1) {
       this._rightButton.setContent("");
     } else {
-      this._rightButton.setContent(">");
+      this._rightButton.setContent("->");
     }
     this._wordHuntGrid.updatePath(
       this._appState.gridAnalysis?.possibleAnswers?.[this._selectedInd]
