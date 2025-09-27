@@ -100,7 +100,10 @@ export default class ResultScreen extends Container implements AppScreen {
       this._w,
       this._h * 0.5,
       (px) => {
-        this._wordsScroll = Math.max(this._wordsScroll + px, 0);
+        this._wordsScroll = Math.min(
+          Math.max(this._wordsScroll + px, 0),
+          this._words.length * 50 - this._h / 2 + 25,
+        );
         this._words.forEach((word, i) => {
           word.setPos(
             this._w / 2,
