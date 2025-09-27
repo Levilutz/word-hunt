@@ -114,7 +114,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
       : "invalid";
     this._curWordPreview.setContent(curWord, curWordType);
     this._wordHuntGrid.updatePath(this._curPath, curWordType);
-    this.playWordSound(curWord, curWordType);
+    this.playWordHoverSound(curWord, curWordType);
   }
 
   private handlePathSubmit(path: PointData[]) {
@@ -132,6 +132,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
         this._appState.submittedWords.length,
       );
       this.toastPoints(pointsForWord(curWord));
+      this.playWordSubmitSound(curWord);
     }
     this.handlePathHover([]);
   }
@@ -157,13 +158,20 @@ export default class WordHuntScreen extends Container implements AppScreen {
     });
   }
 
-  private playWordSound(word: string, wordType: WordType) {
-    if (word.length <= 3 || word.length >= 8) {
+  private playWordHoverSound(word: string, wordType: WordType) {
+    if (word.length < 3 || word.length > 8) {
       return;
     }
     if (wordType === "invalid" || wordType === "valid-used") {
       return;
     }
     sound.play("click");
+  }
+
+  private playWordSubmitSound(word: string) {
+    if (word.length < 3 || word.length > 8) {
+      return;
+    }
+    sound.play(`trill${word.length - 2}`);
   }
 }
