@@ -51,10 +51,8 @@ export default class ResultScreen extends Container implements AppScreen {
       (ans, i) => {
         const word = new WordHuntWord(this._w / 2, this._h / 2 + 25 + i * 50, {
           text: ans.word,
-          mode: this._appState.submittedWords.includes(ans.word)
-            ? "valid-new"
-            : "invalid",
           anchor: { x: 0.5, y: 0 },
+          onPointerDown: () => this.handleWordClicked(i),
         });
         this.addChild(word);
         return word;
@@ -65,5 +63,33 @@ export default class ResultScreen extends Container implements AppScreen {
   resize(w: number, h: number) {
     this._w = w;
     this._h = h;
+  }
+
+  private handleWordClicked(ind: number) {
+    if (ind === this._selectedInd) {
+      this._selectedInd = undefined;
+      this._words[ind].setContent(
+        this._appState.gridAnalysis?.possibleAnswers?.[ind]?.word ?? "",
+        undefined,
+      );
+      this._wordHuntGrid.updatePath([], "invalid");
+    } else {
+      if (this._selectedInd !== undefined) {
+        this._words[this._selectedInd].setContent(
+          this._appState.gridAnalysis?.possibleAnswers?.[this._selectedInd]
+            ?.word ?? "",
+          undefined,
+        );
+      }
+      this._selectedInd = ind;
+      this._words[ind].setContent(
+        this._appState.gridAnalysis?.possibleAnswers?.[ind]?.word ?? "",
+        "invalid",
+      );
+      this._wordHuntGrid.updatePath(
+        this._appState.gridAnalysis?.possibleAnswers?.[ind]?.paths?.[0] ?? [],
+        "valid-new",
+      );
+    }
   }
 }
