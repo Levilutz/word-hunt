@@ -7,14 +7,20 @@ export default class WordHuntWord extends Container {
   private readonly _text: Text;
   private readonly _graphics = new Graphics();
 
-  constructor(x: number, y: number, text: string, mode: WordType | undefined) {
+  constructor(
+    x: number,
+    y: number,
+    text: string,
+    mode: WordType | undefined,
+    anchor?: PointData,
+  ) {
     super({ x, y });
     this._mode = mode;
 
     this.addChild(this._graphics);
     this._text = new Text({
       text: text,
-      anchor: 0.5,
+      anchor: anchor ?? { x: 0.5, y: 0.5 },
       style: {
         fill: 0x000000,
         fontSize: 24,
@@ -48,8 +54,8 @@ export default class WordHuntWord extends Container {
     const pad: PointData = { x: 10, y: 5 };
     this._graphics
       .roundRect(
-        this._text.x - this._text.width * 0.5 - pad.x,
-        this._text.y - this._text.height * 0.5 - pad.y,
+        this._text.x - this._text.width * this._text.anchor.x - pad.x,
+        this._text.y - this._text.height * this._text.anchor.y - pad.y,
         this._text.width + pad.x * 2,
         this._text.height + pad.y * 2,
         10,
