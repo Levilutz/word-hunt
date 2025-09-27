@@ -1,7 +1,8 @@
 import { Application, Assets } from "pixi.js";
 import "./style.css";
-import HelveticaNeueBold from "./assets/HelveticaNeue-Bold.otf";
+import { sound } from "@pixi/sound";
 import click from "./assets/bell72.ogg";
+import HelveticaNeueBold from "./assets/HelveticaNeue-Bold.otf";
 import trill1 from "./assets/trill1.ogg";
 import trill2 from "./assets/trill2.ogg";
 import trill3 from "./assets/trill3.ogg";
@@ -11,7 +12,6 @@ import trill6 from "./assets/trill6.ogg";
 import { Trie } from "./core/trie";
 import Navigation from "./Navigation";
 import type { AppState } from "./State";
-import { sound } from "@pixi/sound";
 
 (async () => {
   await Assets.load(HelveticaNeueBold);
