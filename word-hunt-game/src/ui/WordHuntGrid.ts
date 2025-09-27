@@ -19,6 +19,9 @@ export default class WordHuntGrid extends Container {
   /** The max height (in px) the grid may consume. */
   private _h: number;
 
+  /** The visual scale of the tiles (for animation). */
+  private _tileScale: number;
+
   /** The anchor position. */
   private readonly _anchor: PointData;
 
@@ -55,10 +58,12 @@ export default class WordHuntGrid extends Container {
     grid: (string | null)[][],
     path: PointData[],
     wordType: WordType,
+    tileScale?: number,
   ) {
     super({ x, y });
     this._w = width;
     this._h = height;
+    this._tileScale = tileScale ?? 1;
     this._anchor = anchor;
     this._curPath = path;
     this._curWordType = wordType;
@@ -72,10 +77,11 @@ export default class WordHuntGrid extends Container {
           return null;
         }
         const tilePos = this.logicalToPixel({ x, y });
+        const reduction = this._tilePx * (1 - this._tileScale);
         const tile = new WordHuntTile(
-          tilePos.x,
-          tilePos.y,
-          this._tilePx,
+          tilePos.x + reduction * 0.5,
+          tilePos.y + reduction * 0.5,
+          this._tilePx - reduction,
           value,
         );
         if (pointInList(this._curPath, { x, y })) {
@@ -102,7 +108,12 @@ export default class WordHuntGrid extends Container {
           return;
         }
         const tilePos = this.logicalToPixel({ x, y });
-        tile.setBounds(tilePos.x, tilePos.y, this._tilePx);
+        const reduction = this._tilePx * (1 - this._tileScale);
+        tile.setBounds(
+          tilePos.x + reduction * 0.5,
+          tilePos.y + reduction * 0.5,
+          this._tilePx - reduction,
+        );
       });
     });
     this.renderPath();
@@ -125,6 +136,11 @@ export default class WordHuntGrid extends Container {
       });
     });
     this.renderPath();
+  }
+
+  /** Set the visual tile scale (for animation). */
+  set tileScale(tileScale: number) {
+    this._tileScale = tileScale;
   }
 
   /** Get the calculated tilePx. */
