@@ -24,7 +24,6 @@ import type { AppState } from "./State";
   sound.add("trill6", trill6);
 
   const warmUpAudio = () => {
-    console.log("Audio warmed up");
     sound.play("click", { volume: 0 });
     document.removeEventListener("pointerdown", warmUpAudio);
   };
