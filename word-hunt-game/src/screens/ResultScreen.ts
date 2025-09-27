@@ -1,5 +1,5 @@
 import { sound } from "@pixi/sound";
-import { Container } from "pixi.js";
+import { Container, Graphics } from "pixi.js";
 import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
@@ -36,6 +36,9 @@ export default class ResultScreen extends Container implements AppScreen {
   /** The current scroll of the words list. */
   private _wordsScroll = 0;
 
+  /** A mask for ensuring words out of bounds don't render. */
+  private _wordsMask: Graphics;
+
   /** The words to render in a list. */
   private _words: WordHuntWord[];
 
@@ -67,7 +70,7 @@ export default class ResultScreen extends Container implements AppScreen {
 
     this._leftButton = new Button(
       this._w * 0.5 - 25,
-      this._h * 0.5 - 15,
+      this._h * 0.5 - 25,
       "",
       () => {
         sound.play("click");
@@ -80,7 +83,7 @@ export default class ResultScreen extends Container implements AppScreen {
 
     this._rightButton = new Button(
       this._w * 0.5 + 25,
-      this._h * 0.5 - 15,
+      this._h * 0.5 - 25,
       "",
       () => {
         sound.play("click");
@@ -108,6 +111,12 @@ export default class ResultScreen extends Container implements AppScreen {
     );
     this.addChild(this._wordsHitArea);
 
+    this._wordsMask = new Graphics();
+    this._wordsMask
+      .rect(0, this._h * 0.5, this._w, this._h * 0.5)
+      .fill({ alpha: 0 });
+    this.addChild(this._wordsMask);
+
     this._words = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
       (ans, i) => {
         const word = new WordHuntWord(
@@ -119,6 +128,7 @@ export default class ResultScreen extends Container implements AppScreen {
             onPointerDown: () => this.handleWordClicked(i),
           },
         );
+        word.mask = this._wordsMask;
         this.addChild(word);
         return word;
       },
