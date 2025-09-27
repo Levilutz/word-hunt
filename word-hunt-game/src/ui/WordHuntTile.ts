@@ -36,8 +36,10 @@ export default class WordHuntTile extends Container {
   }
 
   setMode(mode: WordType | undefined) {
+    if (mode === this._mode) {
+      return;
+    }
     this._mode = mode;
-
     this.render();
   }
 
