@@ -1,6 +1,5 @@
 import { Container, type Ticker } from "pixi.js";
 import type { AppState } from "./State";
-import HomeScreen from "./screens/HomeScreen";
 import ResultScreen from "./screens/ResultScreen";
 
 export interface AppScreen extends Container {

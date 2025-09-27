@@ -1,9 +1,9 @@
-import { Container, Text } from "pixi.js";
+import { Container } from "pixi.js";
 import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
-import WordHuntWord from "../ui/WordHuntWord";
 import WordHuntGrid from "../ui/WordHuntGrid";
+import WordHuntWord from "../ui/WordHuntWord";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
