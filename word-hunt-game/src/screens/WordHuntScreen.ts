@@ -62,7 +62,7 @@ export default class WordHuntScreen extends Container implements AppScreen {
     );
     this.addChild(this._wordHuntGrid);
 
-    this._curWordPreview = new WordHuntWord(this._w / 2, 270, "", undefined);
+    this._curWordPreview = new WordHuntWord(this._w / 2, 270);
     this.addChild(this._curWordPreview);
 
     this._wordHuntGridHitArea = new WordHuntGridHitArea(
@@ -166,12 +166,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
     if (points <= 0) {
       return;
     }
-    const toastChip = new WordHuntWord(
-      this._w / 2,
-      270,
-      `+${points}`,
-      "valid-new",
-    );
+    const toastChip = new WordHuntWord(this._w / 2, 270, {
+      text: `+${points}`,
+      mode: "valid-new",
+    });
     this.addChild(toastChip);
     gsap.to(toastChip, {
       y: 180,

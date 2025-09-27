@@ -49,15 +49,13 @@ export default class ResultScreen extends Container implements AppScreen {
 
     this._words = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
       (ans, i) => {
-        const word = new WordHuntWord(
-          this._w / 2,
-          this._h / 2 + 25 + i * 50,
-          ans.word,
-          this._appState.submittedWords.includes(ans.word)
+        const word = new WordHuntWord(this._w / 2, this._h / 2 + 25 + i * 50, {
+          text: ans.word,
+          mode: this._appState.submittedWords.includes(ans.word)
             ? "valid-new"
             : "invalid",
-          { x: 0.5, y: 0 },
-        );
+          anchor: { x: 0.5, y: 0 },
+        });
         this.addChild(word);
         return word;
       },

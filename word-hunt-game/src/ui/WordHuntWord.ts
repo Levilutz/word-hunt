@@ -10,17 +10,19 @@ export default class WordHuntWord extends Container {
   constructor(
     x: number,
     y: number,
-    text: string,
-    mode: WordType | undefined,
-    anchor?: PointData,
+    options?: {
+      text?: string;
+      mode?: WordType;
+      anchor?: PointData;
+    },
   ) {
     super({ x, y });
-    this._mode = mode;
+    this._mode = options?.mode;
 
     this.addChild(this._graphics);
     this._text = new Text({
-      text: text,
-      anchor: anchor ?? { x: 0.5, y: 0.5 },
+      text: options?.text ?? "",
+      anchor: options?.anchor ?? { x: 0.5, y: 0.5 },
       style: {
         fill: 0x000000,
         fontSize: 24,
