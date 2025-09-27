@@ -40,10 +40,36 @@ import type { AppState } from "./State";
   });
 
   const appState: AppState = {
-    trie: new Trie([]),
-    grid: [],
-    submittedWords: [],
-    score: 0,
+    trie: new Trie([
+      "BEEP",
+      "CHLONK",
+      "KNIFE",
+      "PLONK",
+      "FINK",
+      "FINO",
+      "GLOP",
+      "JINK",
+      "KOJI",
+      "KNOP",
+      "MINK",
+      "FAB",
+      "FIE",
+      "FIN",
+      "INK",
+      "JIN",
+      "KOP",
+      "LOP",
+      "NIM",
+      "POL",
+    ]),
+    grid: [
+      ["A", "B", "C", "D"],
+      ["E", "F", "G", "H"],
+      ["I", "J", "K", "L"],
+      ["M", "N", "O", "P"],
+    ],
+    submittedWords: ["FINK", "INK", "FIN"],
+    score: 600,
     endTimeMs: 0,
   };
 

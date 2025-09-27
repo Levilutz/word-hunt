@@ -1,6 +1,7 @@
 import { Container, type Ticker } from "pixi.js";
 import type { AppState } from "./State";
 import HomeScreen from "./screens/HomeScreen";
+import ResultScreen from "./screens/ResultScreen";
 
 export interface AppScreen extends Container {
   update?: (time: Ticker) => void;
@@ -21,7 +22,7 @@ export default class Navigation extends Container {
     this._w = w;
     this._h = h;
 
-    this.goToScreen(HomeScreen);
+    this.goToScreen(ResultScreen);
   }
 
   goToScreen(
