@@ -14,9 +14,10 @@ export default class WordHuntWord extends Container {
       text?: string;
       mode?: WordType;
       anchor?: PointData;
+      onPointerDown?: () => void;
     },
   ) {
-    super({ x, y });
+    super({ x, y, interactive: options?.onPointerDown !== undefined });
     this._mode = options?.mode;
 
     this.addChild(this._graphics);
@@ -30,8 +31,11 @@ export default class WordHuntWord extends Container {
       },
     });
     this.addChild(this._text);
-
     this.renderBg();
+
+    if (options?.onPointerDown !== undefined) {
+      this.on("pointerdown", options?.onPointerDown);
+    }
   }
 
   setPos(x: number, y: number) {
