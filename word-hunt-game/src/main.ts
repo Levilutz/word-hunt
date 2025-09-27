@@ -68,9 +68,62 @@ import type { AppState } from "./State";
       ["I", "J", "K", "L"],
       ["M", "N", "O", "P"],
     ],
-    submittedWords: ["FINK", "INK", "FIN"],
-    score: 600,
+    submittedWords: ["FINK", "INK"],
+    score: 500,
     endTimeMs: 0,
+    gridAnalysis: {
+      possibleAnswers: [
+        {
+          word: "PLONK",
+          paths: [
+            [
+              { x: 3, y: 3 },
+              { x: 3, y: 2 },
+              { x: 2, y: 3 },
+              { x: 1, y: 3 },
+              { x: 2, y: 2 },
+            ],
+          ],
+        },
+        {
+          word: "FINK",
+          paths: [
+            [
+              { x: 1, y: 1 },
+              { x: 0, y: 2 },
+              { x: 1, y: 3 },
+              { x: 2, y: 2 },
+            ],
+          ],
+        },
+        {
+          word: "INK",
+          paths: [
+            [
+              { x: 0, y: 2 },
+              { x: 1, y: 3 },
+              { x: 2, y: 2 },
+            ],
+            [
+              { x: 0, y: 0 },
+              { x: 1, y: 0 },
+              { x: 2, y: 1 },
+            ],
+          ],
+        },
+        {
+          word: "FIN",
+          paths: [
+            [
+              { x: 1, y: 1 },
+              { x: 0, y: 2 },
+              { x: 1, y: 3 },
+            ],
+          ],
+        },
+      ],
+      maxScore: 1400,
+    },
   };
 
   app.renderer.canvas.style.width = `${window.innerWidth}px`;
