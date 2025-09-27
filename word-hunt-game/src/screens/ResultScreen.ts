@@ -1,11 +1,12 @@
+import { sound } from "@pixi/sound";
 import { Container } from "pixi.js";
 import type Navigation from "../Navigation";
 import type { AppScreen } from "../Navigation";
 import type { AppState } from "../State";
+import Button from "../ui/Button";
+import ScrollHitArea from "../ui/ScrollHitArea";
 import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntWord from "../ui/WordHuntWord";
-import Button from "../ui/Button";
-import { sound } from "@pixi/sound";
 
 export default class ResultScreen extends Container implements AppScreen {
   /** A reference to the global navigation instance. */
@@ -28,6 +29,9 @@ export default class ResultScreen extends Container implements AppScreen {
 
   /** The button to click right through paths. */
   private _rightButton: Button;
+
+  /** The hit area for scrolling words. */
+  private _wordsHitArea: ScrollHitArea;
 
   /** The words to render in a list. */
   private _words: WordHuntWord[];
@@ -84,6 +88,14 @@ export default class ResultScreen extends Container implements AppScreen {
     );
     this.addChild(this._rightButton);
 
+    this._wordsHitArea = new ScrollHitArea(
+      0,
+      this._h * 0.5,
+      this._w,
+      this._h * 0.5,
+    );
+    this.addChild(this._wordsHitArea);
+
     this._words = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
       (ans, i) => {
         const word = new WordHuntWord(this._w / 2, this._h / 2 + 25 + i * 50, {
@@ -100,6 +112,7 @@ export default class ResultScreen extends Container implements AppScreen {
   resize(w: number, h: number) {
     this._w = w;
     this._h = h;
+    this._wordsHitArea.resize(0, this._h * 0.5, this._w, this._h * 0.5);
   }
 
   private handleWordClicked(ind: number) {
