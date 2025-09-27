@@ -8,6 +8,7 @@ import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
 import { pointsForWord } from "../utils";
 import { sound } from "@pixi/sound";
+import type { WordType } from "../theme";
 
 export default class WordHuntScreen extends Container implements AppScreen {
   /** A reference to the global app state. */
@@ -103,36 +104,34 @@ export default class WordHuntScreen extends Container implements AppScreen {
 
   private handlePathHover(path: PointData[]) {
     this._curPath = path;
-    const _curWord = path
+    const curWord = path
       .map(({ x, y }) => this._appState.grid[y][x] ?? "")
       .join("");
-    const curWordType = this._appState.trie.containsWord(_curWord)
-      ? this._appState.submittedWords.includes(_curWord)
+    const curWordType = this._appState.trie.containsWord(curWord)
+      ? this._appState.submittedWords.includes(curWord)
         ? "valid-used"
         : "valid-new"
       : "invalid";
-    this._curWordPreview.setContent(_curWord, curWordType);
+    this._curWordPreview.setContent(curWord, curWordType);
     this._wordHuntGrid.updatePath(this._curPath, curWordType);
-    if (curWordType === "invalid") {
-      sound.play("dud");
-    }
+    this.playWordSound(curWord, curWordType);
   }
 
   private handlePathSubmit(path: PointData[]) {
-    const _curWord = path
+    const curWord = path
       .map(({ x, y }) => this._appState.grid[y][x] ?? "")
       .join("");
     if (
-      this._appState.trie.containsWord(_curWord) &&
-      !this._appState.submittedWords.includes(_curWord)
+      this._appState.trie.containsWord(curWord) &&
+      !this._appState.submittedWords.includes(curWord)
     ) {
-      this._appState.submittedWords.push(_curWord);
-      this._appState.score += pointsForWord(_curWord);
+      this._appState.submittedWords.push(curWord);
+      this._appState.score += pointsForWord(curWord);
       this._scoreboard.setScore(
         this._appState.score,
         this._appState.submittedWords.length,
       );
-      this.toastPoints(pointsForWord(_curWord));
+      this.toastPoints(pointsForWord(curWord));
     }
     this.handlePathHover([]);
   }
@@ -156,5 +155,15 @@ export default class WordHuntScreen extends Container implements AppScreen {
         toastChip.destroy({ children: true });
       },
     });
+  }
+
+  private playWordSound(word: string, wordType: WordType) {
+    if (word.length <= 3 || word.length >= 8) {
+      return;
+    }
+    if (wordType === "invalid" || wordType === "valid-used") {
+      return;
+    }
+    sound.play("click");
   }
 }
