@@ -33,6 +33,9 @@ export default class ResultScreen extends Container implements AppScreen {
   /** The hit area for scrolling words. */
   private _wordsHitArea: ScrollHitArea;
 
+  /** The current scroll of the words list. */
+  private _wordsScroll = 0;
+
   /** The words to render in a list. */
   private _words: WordHuntWord[];
 
@@ -93,16 +96,29 @@ export default class ResultScreen extends Container implements AppScreen {
       this._h * 0.5,
       this._w,
       this._h * 0.5,
+      (px) => {
+        this._wordsScroll = Math.max(this._wordsScroll + px, 0);
+        this._words.forEach((word, i) => {
+          word.setPos(
+            this._w / 2,
+            this._h / 2 + 25 + i * 50 - this._wordsScroll,
+          );
+        });
+      },
     );
     this.addChild(this._wordsHitArea);
 
     this._words = (this._appState.gridAnalysis?.possibleAnswers ?? []).map(
       (ans, i) => {
-        const word = new WordHuntWord(this._w / 2, this._h / 2 + 25 + i * 50, {
-          text: ans.word,
-          anchor: { x: 0.5, y: 0 },
-          onPointerDown: () => this.handleWordClicked(i),
-        });
+        const word = new WordHuntWord(
+          this._w / 2,
+          this._h / 2 + 25 + i * 50 + this._wordsScroll,
+          {
+            text: ans.word,
+            anchor: { x: 0.5, y: 0 },
+            onPointerDown: () => this.handleWordClicked(i),
+          },
+        );
         this.addChild(word);
         return word;
       },
