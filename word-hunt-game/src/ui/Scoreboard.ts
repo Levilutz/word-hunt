@@ -1,5 +1,5 @@
 import gsap from "gsap";
-import { Container, Graphics, Text, type DestroyOptions } from "pixi.js";
+import { Container, type DestroyOptions, Graphics, Text } from "pixi.js";
 import theme from "../theme";
 import { formatMinuteSecond } from "../utils";
 
@@ -25,6 +25,9 @@ export default class Scoreboard extends Container {
   /** Interval ID for the interval to refresh the timer text. */
   private readonly _timerIntervalId: number;
 
+  /** Callback for when timer finishes. */
+  private readonly _onTimerFinish?: () => void;
+
   constructor(
     x: number,
     y: number,
@@ -33,11 +36,13 @@ export default class Scoreboard extends Container {
     score: number,
     numWords: number,
     endTimeMs: number,
+    onTimerFinish?: () => void,
   ) {
     super({ x, y });
     this._w = width;
     this._h = height;
     this._endTimeMs = endTimeMs;
+    this._onTimerFinish = onTimerFinish;
 
     this.addChild(this._bg);
 
@@ -85,7 +90,7 @@ export default class Scoreboard extends Container {
 
     this.updateBg();
 
-    this._timerIntervalId = setInterval(this.renderTimer.bind(this), 100);
+    this._timerIntervalId = setInterval(this.updateTimer.bind(this), 100);
   }
 
   setBounds(x: number, y: number, width: number, height: number) {
@@ -117,10 +122,13 @@ export default class Scoreboard extends Container {
     this._numWordsText.text = `WORDS: ${words}`;
   }
 
-  renderTimer() {
+  updateTimer() {
     this._timerText.text = formatMinuteSecond(
       (this._endTimeMs - Date.now()) / 1000,
     );
+    if (Date.now() > this._endTimeMs) {
+      this._onTimerFinish?.();
+    }
   }
 
   destroy(options?: DestroyOptions) {
