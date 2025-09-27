@@ -140,7 +140,24 @@ export default class WordHuntGrid extends Container {
 
   /** Set the visual tile scale (for animation). */
   set tileScale(tileScale: number) {
+    if (tileScale === this._tileScale) {
+      return;
+    }
     this._tileScale = tileScale;
+    this._tiles.forEach((row, y) => {
+      row.forEach((tile, x) => {
+        if (tile === null) {
+          return;
+        }
+        const tilePos = this.logicalToPixel({ x, y });
+        const reduction = this._tilePx * (1 - this._tileScale);
+        tile.setBounds(
+          tilePos.x + reduction * 0.5,
+          tilePos.y + reduction * 0.5,
+          this._tilePx - reduction,
+        );
+      });
+    });
   }
 
   /** Get the calculated tilePx. */
