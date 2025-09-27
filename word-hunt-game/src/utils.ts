@@ -202,7 +202,8 @@ export function gridSize<T>(grid: T[][]): PointData {
 
 /** Format the given number of seconds as minutes and seconds. */
 export function formatMinuteSecond(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${Math.round(seconds) % 60}`;
+  const secs = Math.ceil(seconds) % 60;
+  return `${Math.floor(seconds / 60)}:${String(secs).padStart(2, "0")}`;
 }
 
 /** How many points are awarded for the given word */
