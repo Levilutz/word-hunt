@@ -23,11 +23,12 @@ import type { AppState } from "./State";
   sound.add("trill5", trill5);
   sound.add("trill6", trill6);
 
-  const playAudio = () => {
+  const warmUpAudio = () => {
+    console.log("Audio warmed up");
     sound.play("click", { volume: 0 });
-    document.removeEventListener("pointerdown", playAudio);
+    document.removeEventListener("pointerdown", warmUpAudio);
   };
-  document.addEventListener("pointerdown", playAudio);
+  document.addEventListener("pointerdown", warmUpAudio);
 
   const app = new Application();
 
@@ -39,33 +40,8 @@ import type { AppState } from "./State";
   });
 
   const appState: AppState = {
-    trie: new Trie([
-      "CHLONK",
-      "KNIFE",
-      "PLONK",
-      "FINK",
-      "FINO",
-      "GLOP",
-      "JINK",
-      "KOJI",
-      "KNOP",
-      "MINK",
-      "FAB",
-      "FIE",
-      "FIN",
-      "INK",
-      "JIN",
-      "KOP",
-      "LOP",
-      "NIM",
-      "POL",
-    ]),
-    grid: [
-      ["A", "B", "C", "D"],
-      ["E", "F", "G", "H"],
-      ["I", "J", "K", "L"],
-      ["M", "N", "O", "P"],
-    ],
+    trie: new Trie([]),
+    grid: [],
     submittedWords: [],
     score: 0,
   };

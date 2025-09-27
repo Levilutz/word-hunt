@@ -9,16 +9,20 @@ import WordHuntGrid from "../ui/WordHuntGrid";
 import WordHuntGridHitArea from "../ui/WordHuntGridHitArea";
 import WordHuntWord from "../ui/WordHuntWord";
 import { pointsForWord } from "../utils";
+import type Navigation from "../Navigation";
 
 export default class WordHuntScreen extends Container implements AppScreen {
+  /** A reference to the global navigation instance. */
+  private readonly _nav: Navigation;
+
   /** A reference to the global app state. */
   private readonly _appState: AppState;
 
   /** The width of the screen's area in Px. */
-  private _w: number = 200;
+  private _w: number;
 
   /** The height of the screen's area in Px. */
-  private _h: number = 200;
+  private _h: number;
 
   /** The current path of pressed tiles. */
   private _curPath: PointData[] = [];
@@ -35,9 +39,10 @@ export default class WordHuntScreen extends Container implements AppScreen {
   /** A child container for the scoreboard. */
   private readonly _scoreboard: Scoreboard;
 
-  constructor(appState: AppState, w: number, h: number) {
+  constructor(nav: Navigation, appState: AppState, w: number, h: number) {
     super();
 
+    this._nav = nav;
     this._appState = appState;
 
     this._w = w;
