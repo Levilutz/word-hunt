@@ -76,7 +76,7 @@ export default class WordHuntGridHitArea extends Container {
   /** Handle a pointerdown event over our hit area. */
   private handlePointerDown({ global }: FederatedPointerEvent) {
     const { x, y } = global;
-    const tilePos = pointFloor(this.scaleForGrid({ x, y }));
+    const tilePos = pointFloor(this.scaleForGrid({ x, y }, true));
     if (this._gridRef.tileExists(tilePos)) {
       this._curPath = [tilePos];
     } else {
@@ -94,8 +94,10 @@ export default class WordHuntGridHitArea extends Container {
       this.handlePointerUp();
     } else if (this._curPath.length > 0) {
       const affected = thickRasterCircles(
-        this.scaleForGrid(this._lastPos),
-        this.scaleForGrid({ x, y }),
+        this.scaleForGrid(this._lastPos, true),
+        this.scaleForGrid({ x, y }, true),
+        (0.5 * this._gridRef.tilePx) /
+          (this._gridRef.tilePx + this._gridRef.spacePx),
       );
       let tilesAdded = false;
       for (const tilePos of affected) {
@@ -119,8 +121,8 @@ export default class WordHuntGridHitArea extends Container {
   }
 
   /** Given pixel-space coordinates, scale to grid logical space. */
-  private scaleForGrid(p: PointData): PointData {
-    return this._gridRef.pixelToLogical(pointSub(p, this._gridRef), true);
+  private scaleForGrid(p: PointData, wide: boolean): PointData {
+    return this._gridRef.pixelToLogical(pointSub(p, this._gridRef), wide);
   }
 
   /** Update debug graphics if appropriate. */
@@ -153,7 +155,7 @@ export default class WordHuntGridHitArea extends Container {
           pointAdd(this._gridRef.logicalToPixel(coords), this._gridRef),
           { x: tilePx * 0.5, y: tilePx * 0.5 },
         );
-        const r = (tilePx + spacePx) * 0.5;
+        const r = tilePx * 0.5;
         const hovered = distanceSquared(tilePos, this._lastPos) <= r ** 2;
         this._debug
           ?.circle(tilePos.x, tilePos.y, r - 0.5)
