@@ -101,7 +101,7 @@ export default class WordHuntGridHitArea extends Container {
       );
       let tilesAdded = false;
       for (const tilePos of affected) {
-        if (pointInList(this._curPath, tilePos)) {
+        if (pointInList(this._curPath, tilePos) !== undefined) {
         } else if (
           pointAdjacent(this._curPath[this._curPath.length - 1], tilePos) &&
           this._gridRef.tileExists(tilePos)

@@ -49,6 +49,9 @@ export default class WordHuntGrid extends Container {
   /** The child object for the path drawn over the grid. */
   private readonly _path = new Graphics();
 
+  /** If set, how many of the path steps should be rendered? For animation. */
+  private _pathRenderSteps?: number;
+
   constructor(
     x: number,
     y: number,
@@ -84,7 +87,7 @@ export default class WordHuntGrid extends Container {
           this._tilePx - reduction,
           value,
         );
-        if (pointInList(this._curPath, { x, y })) {
+        if (pointInList(this._curPath, { x, y }) !== undefined) {
           tile.setMode(this._curWordType);
         }
         this.addChild(tile);
@@ -128,7 +131,14 @@ export default class WordHuntGrid extends Container {
         if (tile === null) {
           return;
         }
-        if (pointInList(this._curPath, { x, y })) {
+        const indInPath = pointInList(this._curPath, { x, y });
+        if (
+          indInPath !== undefined &&
+          !(
+            this._pathRenderSteps !== undefined &&
+            indInPath >= this._pathRenderSteps
+          )
+        ) {
           tile.setMode(this._curWordType);
         } else {
           tile.setMode(undefined);
@@ -173,6 +183,36 @@ export default class WordHuntGrid extends Container {
   /** Get the calculated spacePx. */
   get spacePx(): number {
     return this._spacePx;
+  }
+
+  /** Get the number of path steps to render (for animation). */
+  get pathRenderSteps(): number | undefined {
+    return this._pathRenderSteps;
+  }
+
+  /** Set the number of path steps to render (for animation). */
+  set pathRenderSteps(pathRenderSteps: number | undefined) {
+    this._pathRenderSteps = pathRenderSteps;
+    this._tiles.forEach((row, y) => {
+      row.forEach((tile, x) => {
+        if (tile === null) {
+          return;
+        }
+        const indInPath = pointInList(this._curPath, { x, y });
+        if (
+          indInPath !== undefined &&
+          !(
+            this._pathRenderSteps !== undefined &&
+            indInPath >= this._pathRenderSteps
+          )
+        ) {
+          tile.setMode(this._curWordType);
+        } else {
+          tile.setMode(undefined);
+        }
+      });
+    });
+    this.renderPath();
   }
 
   /** Given a point in logical tile space, scale it to pixel space. */
@@ -243,6 +283,9 @@ export default class WordHuntGrid extends Container {
     }
     const color = this._curWordType === "invalid" ? 0xff0000 : 0xffffff;
     this._curPath.forEach((tileCoords, i) => {
+      if (this._pathRenderSteps !== undefined && i >= this._pathRenderSteps) {
+        return;
+      }
       const pos = pointAdd(this.logicalToPixel(tileCoords), {
         x: this._tilePx * 0.5,
         y: this._tilePx * 0.5,

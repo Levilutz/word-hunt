@@ -42,9 +42,10 @@ export function pointAdjacent(a: PointData, b: PointData): boolean {
   return Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1;
 }
 
-/** Check whether the given point is in the given list. */
-export function pointInList(l: PointData[], p: PointData): boolean {
-  return l.some((b) => pointEqual(p, b));
+/** Check whether the given point is in the given list. Returns index. */
+export function pointInList(l: PointData[], p: PointData): number | undefined {
+  const ind = l.findIndex((b) => pointEqual(p, b));
+  return ind === -1 ? undefined : ind;
 }
 
 /** Get the distance squared between two points. */
