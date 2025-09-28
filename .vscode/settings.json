@@ -1,5 +1,29 @@
 {
-  "biome.lsp.bin": "./word-hunt-game/node_modules/@biomejs/biome/bin/biome",
+  "biome.lsp.bin": "./word-hunt-app/node_modules/@biomejs/biome/bin/biome",
   "biome.requireConfiguration": true,
-  "biome.configurationPath": "./word-hunt-game/biome.json"
+  "biome.configurationPath": "./word-hunt-app/biome.json",
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit"
+  }
 }

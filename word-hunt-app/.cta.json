@@ -2,12 +2,10 @@
   "projectName": "word-hunt-app",
   "mode": "file-router",
   "typescript": true,
-  "tailwind": true,
+  "tailwind": false,
   "packageManager": "pnpm",
   "git": true,
   "version": 1,
   "framework": "react-cra",
-  "chosenAddOns": [
-    "biome"
-  ]
+  "chosenAddOns": ["biome"]
 }
