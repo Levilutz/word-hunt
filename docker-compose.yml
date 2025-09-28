@@ -6,14 +6,28 @@ services:
     ports:
       - 5432:5432
 
+  word-hunt-migrations:
+    depends_on:
+      word-hunt-db:
+        condition: service_started
+    build:
+      context: word-hunt-service
+      target: migrations
+    restart: "no"
+    environment:
+      POSTGRES_URL: postgresql://postgres@word-hunt-db:5432/postgres?sslmode=disable
+
   word-hunt-service:
     depends_on:
-      - word-hunt-db
+      word-hunt-db:
+        condition: service_started
+      word-hunt-migrations:
+        condition: service_completed_successfully
     build:
       context: word-hunt-service
       target: dev
     environment:
-      - POSTGRES_URL=postgresql://postgres@word-hunt-db:5432
+      POSTGRES_URL: postgresql://postgres@word-hunt-db:5432
     volumes:
       - ./word-hunt-service:/app
     ports:

@@ -1,0 +1,10 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS games(
+    id UUID PRIMARY KEY,
+    creator_id UUID NOT NULL,
+    game_mode VARCHAR NOT NULL,
+    grid JSONB NOT NULL
+);
+
+COMMIT;
