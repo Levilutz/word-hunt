@@ -11,7 +11,7 @@ function App() {
     <>
       <Header />
       <h1>Hello World!</h1>
-      <img src={logo} width="100px"/>
+      <img src={logo} width="100px" alt="logo" />
     </>
   );
 }
