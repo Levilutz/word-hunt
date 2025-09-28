@@ -1,0 +1,9 @@
+services:
+  word-hunt-service:
+    build:
+      context: word-hunt-service
+      target: dev
+    volumes:
+      - ./word-hunt-service:/app
+    ports:
+      - 8000:8000
