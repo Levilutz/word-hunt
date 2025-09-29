@@ -9,6 +9,7 @@ COPY requirements.txt .
 RUN pip3 install --upgrade -r requirements.txt
 
 COPY main.py .
+COPY src ./src
 
 FROM base AS dev
 
