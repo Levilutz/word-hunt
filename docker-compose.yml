@@ -37,6 +37,7 @@ services:
     depends_on:
       - word-hunt-service
     image: openapitools/openapi-generator-cli
+    restart: "no"
     volumes:
       - ./openapi.json:/openapi.json
       - ./tmp2/:/output/
@@ -48,3 +49,20 @@ services:
       - typescript-fetch
       - -o
       - /output/
+
+  word-hunt-app:
+    depends_on:
+      - word-hunt-service
+    build:
+      context: word-hunt-app
+      target: dev
+    environment:
+      FOO: BAR
+    volumes: # We mount each entity to avoid accidentally mounting node_modules
+      - ./word-hunt-app/public:/app/public
+      - ./word-hunt-app/src:/app/src
+      - ./word-hunt-app/index.html:/app/index.html
+      - ./word-hunt-app/tsconfig.json:/app/tsconfig.json
+      - ./word-hunt-app/vite.config.ts:/app/vite.config.ts
+    ports:
+      - 3000:3000
