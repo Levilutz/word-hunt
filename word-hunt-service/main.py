@@ -4,7 +4,7 @@ import os
 from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg
@@ -31,6 +31,19 @@ async def lifespan(_app: FastAPI):
         register_enum(info, None, GameMode)
     yield
     print("closing...")
+
+
+async def get_session_id(request: Request, response: Response) -> str:
+    session_id: str | None = request.cookies.get("session_id")
+    if session_id is None:
+        session_id = str(uuid4())
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=ENVIRONMENT != "dev",
+        )
+    return session_id
 
 
 app = FastAPI(lifespan=lifespan)
@@ -78,16 +91,7 @@ class CreateGameReq(BaseModel):
 
 
 @app.get("/test")
-async def test(request: Request, response: Response) -> str:
-    session_id: str | None = request.cookies.get("session_id")
-    if session_id is None:
-        session_id = str(uuid4())
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            httponly=True,
-            secure=ENVIRONMENT != "dev",
-        )
+async def test(session_id: str = Depends(get_session_id)) -> str:
     return f"Your session id is {session_id}"
 
 
