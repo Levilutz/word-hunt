@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 import os
+from typing import AsyncGenerator
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 import psycopg
 from psycopg.rows import class_row
@@ -20,15 +22,21 @@ from src.data_models import Game
 ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
 
+pool: AsyncConnectionPool | None = None
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    global pool
     async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
         info = await EnumInfo.fetch(conn, "game_mode")
         if info is None:
             raise Exception("game_mode enum missing")
         register_enum(info, None, GameMode)
+    pool = AsyncConnectionPool(conninfo=POSTGRES_URL)
+    await pool.open()
     yield
+    await pool.close()
     print("closing...")
 
 
@@ -45,6 +53,13 @@ async def get_session_id(request: Request, response: Response) -> UUID:
             secure=ENVIRONMENT != "dev",
         )
     return UUID(session_id)
+
+
+async def get_db_conn() -> AsyncGenerator[psycopg.AsyncConnection]:
+    if pool is None:
+        raise Exception("Cannot access connection pool")
+    async with pool.connection() as db_conn:
+        yield db_conn
 
 
 app = FastAPI(lifespan=lifespan)
@@ -114,24 +129,25 @@ async def test(session_id: UUID = Depends(get_session_id)) -> str:
 
 @app.post("/game/create")
 async def create_game(
-    req: CreateGameReq, session_id: UUID = Depends(get_session_id)
+    req: CreateGameReq,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
 ) -> GetGameResp:
     game = construct_game(session_id, req.game_mode, req.template_name)
-    async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                "INSERT INTO games VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (
-                    game.id,
-                    game.created_at,
-                    game.creator_id,
-                    game.competitor_id,
-                    game.game_mode,
-                    Jsonb(game.grid),
-                    game.start_time,
-                    game.end_time,
-                ),
-            )
+    async with db_conn.cursor() as cur:
+        await cur.execute(
+            "INSERT INTO games VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            (
+                game.id,
+                game.created_at,
+                game.creator_id,
+                game.competitor_id,
+                game.game_mode,
+                Jsonb(game.grid),
+                game.start_time,
+                game.end_time,
+            ),
+        )
     return GetGameResp(
         game_id=game.id,
         game_mode=game.game_mode,
@@ -143,12 +159,13 @@ async def create_game(
 
 @app.get("/game/{game_id}")
 async def get_game(
-    game_id: UUID, session_id: UUID = Depends(get_session_id)
+    game_id: UUID,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
 ) -> GetGameResp | None:
-    async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
-        async with conn.cursor(row_factory=class_row(Game)) as cur:
-            await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
-            game = await cur.fetchone()
+    async with db_conn.cursor(row_factory=class_row(Game)) as cur:
+        await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
+        game = await cur.fetchone()
     if game is None:
         return None
 
@@ -166,16 +183,16 @@ async def get_game(
 
         # Game does not have a competitor yet, join
         elif session_id != game.creator_id:
-            async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
-                async with conn.cursor() as cur:
-                    game.start_time = datetime.now()
-                    await cur.execute(
-                        "UPDATE games SET competitor_id = %s, start_time = %s WHERE id = %s AND competitor_id IS NULL",
-                        (session_id, game.start_time, game_id),
-                    )
-                    # Someone beat us to it
-                    if cur.rowcount == 0:
-                        raise HTTPException(status_code=403)
+            async with db_conn.cursor() as cur:
+                game.start_time = datetime.now()
+                await cur.execute(
+                    "UPDATE games SET competitor_id = %s, start_time = %s WHERE id = %s AND competitor_id IS NULL",
+                    (session_id, game.start_time, game_id),
+                )
+                await db_conn.commit()
+                # Someone beat us to it
+                if cur.rowcount == 0:
+                    raise HTTPException(status_code=403, detail="you lost")
 
     return GetGameResp(
         game_id=game.id,
