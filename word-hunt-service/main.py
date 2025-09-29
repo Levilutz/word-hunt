@@ -4,7 +4,7 @@ import os
 from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg
@@ -75,6 +75,20 @@ class GetGameResp(BaseModel):
 class CreateGameReq(BaseModel):
     game_mode: GameMode
     template_name: GridTemplateName
+
+
+@app.get("/test")
+async def test(request: Request, response: Response) -> str:
+    session_id: str | None = request.cookies.get("session_id")
+    if session_id is None:
+        session_id = str(uuid4())
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=ENVIRONMENT != "dev",
+        )
+    return f"Your session id is {session_id}"
 
 
 @app.post("/game/create")
