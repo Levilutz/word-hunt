@@ -21,6 +21,11 @@ from src.data_models import Game, GameSubmittedWord
 
 ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
+GAME_DURATION_SECS = 80
+"""How long a game is."""
+
+GAME_AUTO_END_SECS = GAME_DURATION_SECS + 30
+"""After this many seconds, the game will force end even if both clients aren't done."""
 
 pool: AsyncConnectionPool | None = None
 
@@ -84,6 +89,13 @@ def construct_game(
 ) -> Game:
     game_id = uuid4()
     grid = random_grid(GRID_TEMPLATES[template_name])
+
+    end_time: datetime | None = None
+    if game_mode == GameMode.solve:
+        end_time = datetime.now()
+    elif game_mode == GameMode.solo:
+        end_time = datetime.now() + timedelta(seconds=GAME_AUTO_END_SECS)
+
     return Game(
         id=game_id,
         created_at=datetime.now(),
@@ -92,11 +104,7 @@ def construct_game(
         game_mode=game_mode,
         grid=grid,
         start_time=datetime.now() if game_mode != GameMode.versus else None,
-        end_time=(
-            datetime.now()
-            if game_mode == GameMode.solve
-            else datetime.now() + timedelta(seconds=110)
-        ),
+        end_time=end_time,
     )
 
 
@@ -186,8 +194,13 @@ async def get_game(
             async with db_conn.cursor() as cur:
                 game.start_time = datetime.now()
                 await cur.execute(
-                    "UPDATE games SET competitor_id = %s, start_time = %s WHERE id = %s AND competitor_id IS NULL",
-                    (session_id, game.start_time, game_id),
+                    "UPDATE games SET competitor_id = %s, start_time = %s, end_time = %s WHERE id = %s AND competitor_id IS NULL",
+                    (
+                        session_id,
+                        game.start_time,
+                        game.start_time + timedelta(seconds=GAME_AUTO_END_SECS),
+                        game_id,
+                    ),
                 )
                 await db_conn.commit()
                 # Someone beat us to it
