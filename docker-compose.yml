@@ -17,9 +17,24 @@ services:
     environment:
       POSTGRES_URL: postgresql://postgres@word-hunt-db:5432/postgres?sslmode=disable
 
+  traefik:
+    image: traefik:3.5.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:5173"
+    ports:
+      - 5173:5173
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   word-hunt-service:
     depends_on:
       word-hunt-db:
+        condition: service_started
+      traefik:
         condition: service_started
       word-hunt-migrations:
         condition: service_completed_successfully
@@ -31,8 +46,13 @@ services:
       POSTGRES_URL: postgresql://postgres@word-hunt-db:5432
     volumes:
       - ./word-hunt-service:/app
-    ports:
-      - 8000:8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.word-hunt-service.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.word-hunt-service.entrypoints=web"
+      - "traefik.http.services.word-hunt-service.loadbalancer.server.port=8000"
+      - "traefik.http.routers.word-hunt-service.middlewares=api-stripprefix"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
 
   generate-client:
     depends_on:
@@ -54,6 +74,7 @@ services:
   word-hunt-app:
     depends_on:
       - word-hunt-service
+      - traefik
     build:
       context: word-hunt-app
       target: dev
@@ -65,5 +86,8 @@ services:
       - ./word-hunt-app/index.html:/app/index.html
       - ./word-hunt-app/tsconfig.json:/app/tsconfig.json
       - ./word-hunt-app/vite.config.ts:/app/vite.config.ts
-    ports:
-      - 3000:3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.word-hunt-app.rule=!PathPrefix(`/api`)"
+      - "traefik.http.routers.word-hunt-app.entrypoints=web"
+      - "traefik.http.services.word-hunt-app.loadbalancer.server.port=3000"
