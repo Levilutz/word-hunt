@@ -5,6 +5,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg
 from psycopg.rows import class_row
@@ -16,6 +17,8 @@ from src.core import GameMode, Grid
 from src.grid_templates import GridTemplateName, GRID_TEMPLATES
 from src.data_models import Game
 
+
+ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
 
 
@@ -31,6 +34,15 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+if ENVIRONMENT == "dev":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.get("/ping")

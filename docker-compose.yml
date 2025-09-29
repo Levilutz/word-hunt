@@ -27,6 +27,7 @@ services:
       context: word-hunt-service
       target: dev
     environment:
+      ENV: dev
       POSTGRES_URL: postgresql://postgres@word-hunt-db:5432
     volumes:
       - ./word-hunt-service:/app
