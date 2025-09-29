@@ -1,10 +1,9 @@
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
-from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg
@@ -33,7 +32,7 @@ async def lifespan(_app: FastAPI):
     print("closing...")
 
 
-async def get_session_id(request: Request, response: Response) -> str:
+async def get_session_id(request: Request, response: Response) -> UUID:
     session_id: str | None = request.cookies.get("session_id")
     if session_id is None:
         session_id = request.headers.get("x-session-id")
@@ -45,7 +44,7 @@ async def get_session_id(request: Request, response: Response) -> str:
             httponly=True,
             secure=ENVIRONMENT != "dev",
         )
-    return session_id
+    return UUID(session_id)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -77,14 +76,30 @@ def construct_game(
         competitor_id=None,
         game_mode=game_mode,
         grid=grid,
+        start_time=datetime.now() if game_mode != GameMode.versus else None,
+        end_time=(
+            datetime.now()
+            if game_mode == GameMode.solve
+            else datetime.now() + timedelta(seconds=110)
+        ),
     )
 
 
 class GetGameResp(BaseModel):
     game_id: UUID
+    """The ID of the game."""
+
     game_mode: GameMode
+    """The game mode."""
+
     grid: Grid
-    status: Literal["waiting", "started", "ended"]
+    """The grid of characters for this game."""
+
+    ready: bool
+    """Whether the game is ready. Only false in two-player game before start."""
+
+    ended: bool
+    """Whether the game is over. Triggered when both players finish, or too much time passes."""
 
 
 class CreateGameReq(BaseModel):
@@ -93,17 +108,19 @@ class CreateGameReq(BaseModel):
 
 
 @app.get("/test")
-async def test(session_id: str = Depends(get_session_id)) -> str:
+async def test(session_id: UUID = Depends(get_session_id)) -> str:
     return f"Your session id is {session_id}"
 
 
 @app.post("/game/create")
-async def create_game(req: CreateGameReq) -> GetGameResp:
-    game = construct_game(uuid4(), req.game_mode, req.template_name)
+async def create_game(
+    req: CreateGameReq, session_id: UUID = Depends(get_session_id)
+) -> GetGameResp:
+    game = construct_game(session_id, req.game_mode, req.template_name)
     async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
         async with conn.cursor() as cur:
             await cur.execute(
-                "INSERT INTO games VALUES (%s, %s, %s, %s, %s, %s)",
+                "INSERT INTO games VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                 (
                     game.id,
                     game.created_at,
@@ -111,21 +128,59 @@ async def create_game(req: CreateGameReq) -> GetGameResp:
                     game.competitor_id,
                     game.game_mode,
                     Jsonb(game.grid),
+                    game.start_time,
+                    game.end_time,
                 ),
             )
     return GetGameResp(
-        game_id=game.id, game_mode=game.game_mode, grid=game.grid, status="waiting"
+        game_id=game.id,
+        game_mode=game.game_mode,
+        grid=game.grid,
+        ready=game.start_time is not None and game.start_time < datetime.now(),
+        ended=game.end_time is not None and game.end_time < datetime.now(),
     )
 
 
 @app.get("/game/{game_id}")
-async def get_game(game_id: UUID) -> GetGameResp | None:
+async def get_game(
+    game_id: UUID, session_id: UUID = Depends(get_session_id)
+) -> GetGameResp | None:
     async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
         async with conn.cursor(row_factory=class_row(Game)) as cur:
             await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
             game = await cur.fetchone()
     if game is None:
         return None
+
+    # Solo game is only accessible to creator
+    if game.game_mode == GameMode.solo:
+        if session_id != game.creator_id:
+            raise HTTPException(status_code=403)
+
+    # Versus game is only accessible to participants
+    elif game.game_mode == GameMode.versus:
+        # If game already has both participants, ensure caller is one of them
+        if game.competitor_id is not None:
+            if session_id not in [game.creator_id, game.competitor_id]:
+                raise HTTPException(status_code=403)
+
+        # Game does not have a competitor yet, join
+        elif session_id != game.creator_id:
+            async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
+                async with conn.cursor() as cur:
+                    game.start_time = datetime.now()
+                    await cur.execute(
+                        "UPDATE games SET competitor_id = %s, start_time = %s WHERE id = %s AND competitor_id IS NULL",
+                        (session_id, game.start_time, game_id),
+                    )
+                    # Someone beat us to it
+                    if cur.rowcount == 0:
+                        raise HTTPException(status_code=403)
+
     return GetGameResp(
-        game_id=game.id, game_mode=game.game_mode, grid=game.grid, status="waiting"
+        game_id=game.id,
+        game_mode=game.game_mode,
+        grid=game.grid,
+        ready=game.start_time is not None and game.start_time < datetime.now(),
+        ended=game.end_time is not None and game.end_time < datetime.now(),
     )

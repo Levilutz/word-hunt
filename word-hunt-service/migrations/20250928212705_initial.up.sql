@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS games(
     creator_id UUID NOT NULL,
     competitor_id UUID,
     game_mode game_mode NOT NULL,
-    grid JSONB NOT NULL
+    grid JSONB NOT NULL,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP
 );
 
 CREATE INDEX games_creator_id ON games (creator_id);

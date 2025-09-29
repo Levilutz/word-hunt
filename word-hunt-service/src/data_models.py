@@ -13,3 +13,5 @@ class Game(BaseModel):
     competitor_id: UUID | None
     game_mode: GameMode
     grid: Grid
+    start_time: datetime | None
+    end_time: datetime | None
