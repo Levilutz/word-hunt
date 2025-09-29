@@ -14,9 +14,9 @@ from psycopg.types.json import Jsonb
 from psycopg.types.enum import EnumInfo, register_enum
 
 from src.utils import random_grid
-from src.core import GameMode, Grid
+from src.core import GameMode, Grid, Point, extract_word
 from src.grid_templates import GridTemplateName, GRID_TEMPLATES
-from src.data_models import Game
+from src.data_models import Game, GameSubmittedWord
 
 
 ENVIRONMENT = os.getenv("ENV", "prod")
@@ -162,12 +162,12 @@ async def get_game(
     game_id: UUID,
     session_id: UUID = Depends(get_session_id),
     db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
-) -> GetGameResp | None:
+) -> GetGameResp:
     async with db_conn.cursor(row_factory=class_row(Game)) as cur:
         await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
         game = await cur.fetchone()
     if game is None:
-        return None
+        raise HTTPException(status_code=404)
 
     # Solo game is only accessible to creator
     if game.game_mode == GameMode.solo:
@@ -201,3 +201,71 @@ async def get_game(
         ready=game.start_time is not None and game.start_time < datetime.now(),
         ended=game.end_time is not None and game.end_time < datetime.now(),
     )
+
+
+class SubmitWordsReq(BaseModel):
+    paths: list[list[Point]]
+
+
+@app.post("/game/{game_id}/submit-words")
+async def submit_word(
+    game_id: UUID,
+    req: SubmitWordsReq,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
+) -> None:
+    # Ensure paths submitted
+    if len(req.paths) == 0:
+        raise HTTPException(status_code=400, detail="No paths provided")
+
+    # Pull the game
+    async with db_conn.cursor(row_factory=class_row(Game)) as cur:
+        await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
+        game = await cur.fetchone()
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    # Ensure user has access to this game
+    if session_id not in [game.creator_id, game.competitor_id]:
+        raise HTTPException(status_code=403)
+
+    # Ensure game isn't pre-ready
+    if game.start_time is None or game.start_time > datetime.now():
+        raise HTTPException(status_code=400, detail="Game not started yet")
+
+    # Ensure game isn't over
+    if game.end_time is not None and game.end_time < datetime.now():
+        raise HTTPException(status_code=400, detail="Game ended")
+
+    # Validate submitted words and build data models
+    submitted_words: list[GameSubmittedWord] = []
+    for i, path in enumerate(req.paths):
+        word = extract_word(game.grid, path)
+        if word is None:
+            raise HTTPException(status_code=400, detail=f"Path {i} invalid")
+        # TODO: Validate against word list
+        submitted_words.append(
+            GameSubmittedWord(
+                id=uuid4(),
+                game_id=game_id,
+                submitter_id=session_id,
+                tile_path=path,
+                word=word,
+            )
+        )
+
+    # Insert submitted words into DB
+    async with db_conn.cursor() as cur:
+        await cur.executemany(
+            "INSERT INTO game_submitted_words VALUES (%s, %s, %s, %s, %s)",
+            [
+                (
+                    submitted_word.id,
+                    submitted_word.game_id,
+                    submitted_word.submitter_id,
+                    Jsonb([point.model_dump() for point in submitted_word.tile_path]),
+                    submitted_word.word,
+                )
+                for submitted_word in submitted_words
+            ],
+        )
