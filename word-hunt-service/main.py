@@ -36,6 +36,8 @@ async def lifespan(_app: FastAPI):
 async def get_session_id(request: Request, response: Response) -> str:
     session_id: str | None = request.cookies.get("session_id")
     if session_id is None:
+        session_id = request.headers.get("x-session-id")
+    if session_id is None:
         session_id = str(uuid4())
         response.set_cookie(
             key="session_id",
