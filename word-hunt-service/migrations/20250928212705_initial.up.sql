@@ -21,4 +21,14 @@ ON games (created_at)
 WHERE competitor_id IS NULL
 AND game_mode = 'versus';
 
+CREATE TABLE IF NOT EXISTS game_submitted_words(
+    id UUID PRIMARY KEY,
+    game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    submitter_id UUID NOT NULL,
+    tile_path JSONB NOT NULL,
+    word VARCHAR NOT NULL
+);
+
+CREATE INDEX game_submitted_words_game_id ON game_submitted_words(game_id);
+
 COMMIT;

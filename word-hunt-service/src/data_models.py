@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.core import GameMode, Grid
+from src.core import GameMode, Grid, Point
 
 
 class Game(BaseModel):
@@ -15,3 +15,11 @@ class Game(BaseModel):
     grid: Grid
     start_time: datetime | None
     end_time: datetime | None
+
+
+class GameSubmittedWord(BaseModel):
+    id: UUID
+    game_id: UUID
+    submitter_id: UUID
+    tile_path: list[Point]
+    word: str
