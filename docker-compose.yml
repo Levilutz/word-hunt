@@ -32,3 +32,19 @@ services:
       - ./word-hunt-service:/app
     ports:
       - 8000:8000
+
+  generate-client:
+    depends_on:
+      - word-hunt-service
+    image: openapitools/openapi-generator-cli
+    volumes:
+      - ./openapi.json:/openapi.json
+      - ./tmp2/:/output/
+    command:
+      - generate
+      - -i
+      - http://word-hunt-service:8000/openapi.json
+      - -g
+      - typescript-fetch
+      - -o
+      - /output/
