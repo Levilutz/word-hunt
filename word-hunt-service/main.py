@@ -9,23 +9,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 import psycopg
-from psycopg.rows import class_row
-from psycopg.types.json import Jsonb
 from psycopg.types.enum import EnumInfo, register_enum
 
 from src.utils import random_grid
+from src.constants import GAME_AUTO_END_SECS
 from src.core import GameMode, Grid, Point, extract_word
+from src.db import create_game, get_game, join_game, submit_words
 from src.grid_templates import GridTemplateName, GRID_TEMPLATES
 from src.data_models import Game, GameSubmittedWord
 
 
 ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
-GAME_DURATION_SECS = 80
-"""How long a game is."""
-
-GAME_AUTO_END_SECS = GAME_DURATION_SECS + 30
-"""After this many seconds, the game will force end even if both clients aren't done."""
 
 pool: AsyncConnectionPool | None = None
 
@@ -145,26 +140,13 @@ class CreateGameReq(BaseModel):
 
 
 @app.post("/game/create")
-async def create_game(
+async def post_create_game(
     req: CreateGameReq,
     session_id: UUID = Depends(get_session_id),
     db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
 ) -> GetGameResp:
     game = construct_game(session_id, req.game_mode, req.template_name)
-    async with db_conn.cursor() as cur:
-        await cur.execute(
-            "INSERT INTO games VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-            (
-                game.id,
-                game.created_at,
-                game.creator_id,
-                game.competitor_id,
-                game.game_mode,
-                Jsonb(game.grid),
-                game.start_time,
-                game.end_time,
-            ),
-        )
+    await create_game(db_conn, game)
     return GetGameResp(
         game_id=game.id,
         game_mode=game.game_mode,
@@ -180,14 +162,12 @@ async def create_game(
 
 
 @app.get("/game/{game_id}")
-async def get_game(
+async def get_game_by_id(
     game_id: UUID,
     session_id: UUID = Depends(get_session_id),
     db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
 ) -> GetGameResp:
-    async with db_conn.cursor(row_factory=class_row(Game)) as cur:
-        await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
-        game = await cur.fetchone()
+    game = await get_game(db_conn, game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
@@ -205,22 +185,11 @@ async def get_game(
 
         # Game does not have a competitor yet, join
         elif session_id != game.creator_id:
-            async with db_conn.cursor() as cur:
-                game.start_time = datetime.now()
-                await cur.execute(
-                    "UPDATE games SET competitor_id = %s, start_time = %s, end_time = %s WHERE id = %s AND competitor_id IS NULL",
-                    (
-                        session_id,
-                        game.start_time,
-                        game.start_time + timedelta(seconds=GAME_AUTO_END_SECS),
-                        game_id,
-                    ),
-                )
-                await db_conn.commit()
-                # Someone beat us to it
-                if cur.rowcount == 0:
-                    raise HTTPException(status_code=403, detail="you lost")
+            success = await join_game(db_conn, game_id, session_id)
+            if not success:
+                raise HTTPException(status_code=403, detail="Game no longer open")
 
+    # TODO get game fresh
     return GetGameResp(
         game_id=game.id,
         game_mode=game.game_mode,
@@ -240,7 +209,7 @@ class SubmitWordsReq(BaseModel):
 
 
 @app.post("/game/{game_id}/submit-words")
-async def submit_word(
+async def post_game_submit_words(
     game_id: UUID,
     req: SubmitWordsReq,
     session_id: UUID = Depends(get_session_id),
@@ -251,9 +220,7 @@ async def submit_word(
         raise HTTPException(status_code=400, detail="No paths provided")
 
     # Pull the game
-    async with db_conn.cursor(row_factory=class_row(Game)) as cur:
-        await cur.execute("SELECT * FROM games WHERE id = %s", (game_id,))
-        game = await cur.fetchone()
+    game = await get_game(db_conn, game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
@@ -287,17 +254,4 @@ async def submit_word(
         )
 
     # Insert submitted words into DB
-    async with db_conn.cursor() as cur:
-        await cur.executemany(
-            "INSERT INTO game_submitted_words VALUES (%s, %s, %s, %s, %s)",
-            [
-                (
-                    submitted_word.id,
-                    submitted_word.game_id,
-                    submitted_word.submitter_id,
-                    Jsonb([point.model_dump() for point in submitted_word.tile_path]),
-                    submitted_word.word,
-                )
-                for submitted_word in submitted_words
-            ],
-        )
+    await submit_words(db_conn, submitted_words)
