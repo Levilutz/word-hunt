@@ -108,6 +108,14 @@ def construct_game(
     )
 
 
+class GetGameRespPlayer(BaseModel):
+    num_points: int
+    """How many points this player has."""
+
+    found_words: list[str]
+    """Which words has this player found."""
+
+
 class GetGameResp(BaseModel):
     game_id: UUID
     """The ID of the game."""
@@ -124,15 +132,16 @@ class GetGameResp(BaseModel):
     ended: bool
     """Whether the game is over. Triggered when both players finish, or too much time passes."""
 
+    this_player: GetGameRespPlayer
+    """The details for the player retrieving game info."""
+
+    other_player: GetGameRespPlayer | None
+    """The details for the other player, if present."""
+
 
 class CreateGameReq(BaseModel):
     game_mode: GameMode
     template_name: GridTemplateName
-
-
-@app.get("/test")
-async def test(session_id: UUID = Depends(get_session_id)) -> str:
-    return f"Your session id is {session_id}"
 
 
 @app.post("/game/create")
@@ -162,6 +171,11 @@ async def create_game(
         grid=game.grid,
         ready=game.start_time is not None and game.start_time < datetime.now(),
         ended=game.end_time is not None and game.end_time < datetime.now(),
+        this_player=GetGameRespPlayer(
+            num_points=0,
+            found_words=[],
+        ),
+        other_player=None,
     )
 
 
@@ -213,6 +227,11 @@ async def get_game(
         grid=game.grid,
         ready=game.start_time is not None and game.start_time < datetime.now(),
         ended=game.end_time is not None and game.end_time < datetime.now(),
+        this_player=GetGameRespPlayer(
+            num_points=0,
+            found_words=[],
+        ),
+        other_player=None,
     )
 
 
