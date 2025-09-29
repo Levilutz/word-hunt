@@ -11,7 +11,8 @@
       "src/**/*",
       "index.html",
       "vite.config.js",
-      "!src/routeTree.gen.ts"
+      "!src/routeTree.gen.ts",
+      "!src/clients/word-hunt-service"
     ]
   },
   "formatter": {

@@ -41,7 +41,7 @@ services:
     restart: "no"
     volumes:
       - ./openapi.json:/openapi.json
-      - ./tmp2/:/output/
+      - ./word-hunt-app/src/clients/word-hunt-service/:/output/
     command:
       - generate
       - -i
