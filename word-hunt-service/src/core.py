@@ -39,3 +39,19 @@ def extract_word(grid: Grid, path: list[Point]) -> str | None:
             return None
         out += item
     return out or None
+
+
+def points_for_word(word: str) -> int:
+    points_by_len = {
+        3: 100,
+        4: 400,
+        5: 800,
+        6: 1400,
+        7: 1800,
+        8: 2200,
+    }
+    return points_by_len.get(len(word), 0)
+
+
+def points_for_words(words: list[str]) -> int:
+    return sum(points_for_word(word) for word in words)

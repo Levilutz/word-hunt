@@ -13,8 +13,8 @@ from psycopg.types.enum import EnumInfo, register_enum
 
 from src.utils import random_grid
 from src.constants import GAME_AUTO_END_SECS
-from src.core import GameMode, Grid, Point, extract_word
-from src.db import create_game, get_game, join_game, submit_words
+from src.core import GameMode, Grid, Point, extract_word, points_for_words
+from src.db import create_game, get_game, join_game, submit_words, get_submitted_words
 from src.grid_templates import GridTemplateName, GRID_TEMPLATES
 from src.data_models import Game, GameSubmittedWord
 
@@ -134,6 +134,60 @@ class GetGameResp(BaseModel):
     """The details for the other player, if present."""
 
 
+def group_submitted_words_by_session(
+    submitted_words: list[GameSubmittedWord],
+) -> dict[UUID, list[str]]:
+    """Dedup and group submitted words by session id."""
+    out: dict[UUID, set[str]] = {}
+    for submitted_word in submitted_words:
+        if submitted_word.submitter_id not in out:
+            out[submitted_word.submitter_id] = set()
+        out[submitted_word.submitter_id].add(submitted_word.word)
+    return {k: list(v) for k, v in out.items()}
+
+
+def build_get_game_resp(
+    game: Game, submitted_words: list[GameSubmittedWord], for_session_id: UUID
+) -> GetGameResp:
+    submitted_words_by_sid = group_submitted_words_by_session(submitted_words)
+
+    creator_submitted_words = submitted_words_by_sid.get(game.creator_id, [])
+    creator_player_data = GetGameRespPlayer(
+        num_points=points_for_words(creator_submitted_words),
+        found_words=creator_submitted_words,
+    )
+
+    competitor_player_data: GetGameRespPlayer | None = None
+    if game.competitor_id is not None:
+        competitor_submitted_words = submitted_words_by_sid.get(game.competitor_id, [])
+        competitor_player_data = GetGameRespPlayer(
+            num_points=points_for_words(competitor_submitted_words),
+            found_words=competitor_submitted_words,
+        )
+
+    this_player_data: GetGameRespPlayer
+    other_player_data: GetGameRespPlayer | None
+    if for_session_id == game.creator_id:
+        this_player_data = creator_player_data
+        other_player_data = competitor_player_data
+    elif for_session_id == game.competitor_id:
+        assert competitor_player_data is not None
+        this_player_data = competitor_player_data
+        other_player_data = creator_player_data
+    else:
+        raise Exception("Cannot build GetGameResp for non-participant")
+
+    return GetGameResp(
+        game_id=game.id,
+        game_mode=game.game_mode,
+        grid=game.grid,
+        ready=game.start_time is not None and game.start_time < datetime.now(),
+        ended=game.end_time is not None and game.end_time < datetime.now(),
+        this_player=this_player_data,
+        other_player=other_player_data,
+    )
+
+
 class CreateGameReq(BaseModel):
     game_mode: GameMode
     template_name: GridTemplateName
@@ -189,18 +243,13 @@ async def get_game_by_id(
             if not success:
                 raise HTTPException(status_code=403, detail="Game no longer open")
 
-    # TODO get game fresh
-    return GetGameResp(
-        game_id=game.id,
-        game_mode=game.game_mode,
-        grid=game.grid,
-        ready=game.start_time is not None and game.start_time < datetime.now(),
-        ended=game.end_time is not None and game.end_time < datetime.now(),
-        this_player=GetGameRespPlayer(
-            num_points=0,
-            found_words=[],
-        ),
-        other_player=None,
+    # Refresh game
+    game = await get_game(db_conn, game_id)
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    return build_get_game_resp(
+        game, await get_submitted_words(db_conn, game_id), session_id
     )
 
 

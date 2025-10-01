@@ -71,3 +71,13 @@ async def submit_words(
                 for submitted_word in submitted_words
             ],
         )
+
+
+async def get_submitted_words(
+    db_conn: AsyncConnection, game_id: UUID
+) -> list[GameSubmittedWord]:
+    async with db_conn.cursor(row_factory=class_row(GameSubmittedWord)) as cur:
+        await cur.execute(
+            "SELECT * FROM game_submitted_words WHERE game_id = %s", (game_id,)
+        )
+        return await cur.fetchall()
