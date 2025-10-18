@@ -1,22 +1,12 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
 import os
 from typing import AsyncGenerator
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg_pool import AsyncConnectionPool
-from pydantic import BaseModel
 import psycopg
-from psycopg.types.enum import EnumInfo, register_enum
-
-from src.utils import random_grid
-from src.constants import GAME_AUTO_END_SECS
-from src.core import Grid, Point, extract_word, points_for_words
-from src.db import create_game, get_game, join_game, submit_words, get_submitted_words
-from src.grid_templates import GridTemplateName, GRID_TEMPLATES
-from src.data_models import Game, GameSubmittedWord
 
 
 ENVIRONMENT = os.getenv("ENV", "prod")
@@ -28,10 +18,13 @@ pool: AsyncConnectionPool | None = None
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     global pool
-    pool = AsyncConnectionPool(conninfo=POSTGRES_URL, kwargs={"autocommit": True})
-    await pool.open()
-    yield
-    await pool.close()
+    async with AsyncConnectionPool(
+        conninfo=POSTGRES_URL,
+        connection_class=psycopg.AsyncConnection,
+        kwargs={"autocommit": True},
+    ) as conn_pool:
+        pool = conn_pool
+        yield
     print("closing...")
 
 
@@ -72,230 +65,3 @@ if ENVIRONMENT == "dev":
 @app.get("/ping")
 async def ping() -> str:
     return "OK"
-
-
-def construct_game(
-    creator_id: UUID, game_mode: GameMode, template_name: GridTemplateName
-) -> Game:
-    game_id = uuid4()
-    grid = random_grid(GRID_TEMPLATES[template_name])
-
-    end_time: datetime | None = None
-    if game_mode == GameMode.solve:
-        end_time = datetime.now()
-    elif game_mode == GameMode.solo:
-        end_time = datetime.now() + timedelta(seconds=GAME_AUTO_END_SECS)
-
-    return Game(
-        id=game_id,
-        created_at=datetime.now(),
-        creator_id=creator_id,
-        competitor_id=None,
-        game_mode=game_mode,
-        grid=grid,
-        start_time=datetime.now() if game_mode != GameMode.versus else None,
-        end_time=end_time,
-    )
-
-
-class GetGameRespPlayer(BaseModel):
-    num_points: int
-    """How many points this player has."""
-
-    found_words: list[str]
-    """Which words has this player found."""
-
-
-class GetGameResp(BaseModel):
-    game_id: UUID
-    """The ID of the game."""
-
-    game_mode: GameMode
-    """The game mode."""
-
-    grid: Grid
-    """The grid of characters for this game."""
-
-    ready: bool
-    """Whether the game is ready. Only false in two-player game before start."""
-
-    ended: bool
-    """Whether the game is over. Triggered when both players finish, or too much time passes."""
-
-    this_player: GetGameRespPlayer
-    """The details for the player retrieving game info."""
-
-    other_player: GetGameRespPlayer | None
-    """The details for the other player, if present."""
-
-
-def group_submitted_words_by_session(
-    submitted_words: list[GameSubmittedWord],
-) -> dict[UUID, list[str]]:
-    """Dedup and group submitted words by session id."""
-    out: dict[UUID, set[str]] = {}
-    for submitted_word in submitted_words:
-        if submitted_word.submitter_id not in out:
-            out[submitted_word.submitter_id] = set()
-        out[submitted_word.submitter_id].add(submitted_word.word)
-    return {k: list(v) for k, v in out.items()}
-
-
-def build_get_game_resp(
-    game: Game, submitted_words: list[GameSubmittedWord], for_session_id: UUID
-) -> GetGameResp:
-    submitted_words_by_sid = group_submitted_words_by_session(submitted_words)
-
-    creator_submitted_words = submitted_words_by_sid.get(game.creator_id, [])
-    creator_player_data = GetGameRespPlayer(
-        num_points=points_for_words(creator_submitted_words),
-        found_words=creator_submitted_words,
-    )
-
-    competitor_player_data: GetGameRespPlayer | None = None
-    if game.competitor_id is not None:
-        competitor_submitted_words = submitted_words_by_sid.get(game.competitor_id, [])
-        competitor_player_data = GetGameRespPlayer(
-            num_points=points_for_words(competitor_submitted_words),
-            found_words=competitor_submitted_words,
-        )
-
-    this_player_data: GetGameRespPlayer
-    other_player_data: GetGameRespPlayer | None
-    if for_session_id == game.creator_id:
-        this_player_data = creator_player_data
-        other_player_data = competitor_player_data
-    elif for_session_id == game.competitor_id:
-        assert competitor_player_data is not None
-        this_player_data = competitor_player_data
-        other_player_data = creator_player_data
-    else:
-        raise Exception("Cannot build GetGameResp for non-participant")
-
-    return GetGameResp(
-        game_id=game.id,
-        game_mode=game.game_mode,
-        grid=game.grid,
-        ready=game.start_time is not None and game.start_time < datetime.now(),
-        ended=game.end_time is not None and game.end_time < datetime.now(),
-        this_player=this_player_data,
-        other_player=other_player_data,
-    )
-
-
-class CreateGameReq(BaseModel):
-    game_mode: GameMode
-    template_name: GridTemplateName
-
-
-@app.post("/game/create")
-async def post_create_game(
-    req: CreateGameReq,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
-) -> GetGameResp:
-    game = construct_game(session_id, req.game_mode, req.template_name)
-    await create_game(db_conn, game)
-    return GetGameResp(
-        game_id=game.id,
-        game_mode=game.game_mode,
-        grid=game.grid,
-        ready=game.start_time is not None and game.start_time < datetime.now(),
-        ended=game.end_time is not None and game.end_time < datetime.now(),
-        this_player=GetGameRespPlayer(
-            num_points=0,
-            found_words=[],
-        ),
-        other_player=None,
-    )
-
-
-@app.get("/game/{game_id}")
-async def get_game_by_id(
-    game_id: UUID,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
-) -> GetGameResp:
-    game = await get_game(db_conn, game_id)
-    if game is None:
-        raise HTTPException(status_code=404)
-
-    # Solo game is only accessible to creator
-    if game.game_mode == GameMode.solo:
-        if session_id != game.creator_id:
-            raise HTTPException(status_code=403)
-
-    # Versus game is only accessible to participants
-    elif game.game_mode == GameMode.versus:
-        # If game already has both participants, ensure caller is one of them
-        if game.competitor_id is not None:
-            if session_id not in [game.creator_id, game.competitor_id]:
-                raise HTTPException(status_code=403)
-
-        # Game does not have a competitor yet, join
-        elif session_id != game.creator_id:
-            success = await join_game(db_conn, game_id, session_id)
-            if not success:
-                raise HTTPException(status_code=403, detail="Game no longer open")
-
-    # Refresh game
-    game = await get_game(db_conn, game_id)
-    if game is None:
-        raise HTTPException(status_code=404)
-
-    return build_get_game_resp(
-        game, await get_submitted_words(db_conn, game_id), session_id
-    )
-
-
-class SubmitWordsReq(BaseModel):
-    paths: list[list[Point]]
-
-
-@app.post("/game/{game_id}/submit-words")
-async def post_game_submit_words(
-    game_id: UUID,
-    req: SubmitWordsReq,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: psycopg.AsyncConnection = Depends(get_db_conn),
-) -> None:
-    # Ensure paths submitted
-    if len(req.paths) == 0:
-        raise HTTPException(status_code=400, detail="No paths provided")
-
-    # Pull the game
-    game = await get_game(db_conn, game_id)
-    if game is None:
-        raise HTTPException(status_code=404)
-
-    # Ensure user has access to this game
-    if session_id not in [game.creator_id, game.competitor_id]:
-        raise HTTPException(status_code=403)
-
-    # Ensure game isn't pre-ready
-    if game.start_time is None or game.start_time > datetime.now():
-        raise HTTPException(status_code=400, detail="Game not started yet")
-
-    # Ensure game isn't over
-    if game.end_time is not None and game.end_time < datetime.now():
-        raise HTTPException(status_code=400, detail="Game ended")
-
-    # Validate submitted words and build data models
-    submitted_words: list[GameSubmittedWord] = []
-    for i, path in enumerate(req.paths):
-        word = extract_word(game.grid, path)
-        if word is None:
-            raise HTTPException(status_code=400, detail=f"Path {i} invalid")
-        # TODO: Validate against word list
-        submitted_words.append(
-            GameSubmittedWord(
-                id=uuid4(),
-                game_id=game_id,
-                submitter_id=session_id,
-                tile_path=path,
-                word=word,
-            )
-        )
-
-    # Insert submitted words into DB
-    await submit_words(db_conn, submitted_words)
