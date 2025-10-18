@@ -1,2 +1,2 @@
 [lint]
-select = ["E", "F", "FAST"]
+select = ["ASYNC", "E", "F", "FAST", "S"]

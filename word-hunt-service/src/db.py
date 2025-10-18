@@ -172,7 +172,7 @@ async def versus_game_set_player_done(
     UPDATE versus_games
     SET session_id_{player}_done = TRUE
     WHERE game_id = %s
-    """
+    """  # noqa: S608
 
     await db_conn.execute(query, (game_id,))
 

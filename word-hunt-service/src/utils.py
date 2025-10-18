@@ -4,7 +4,7 @@ from src.core import Grid, GridTemplate
 
 
 def random_alpha() -> str:
-    return random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    return random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")  # noqa: S311
 
 
 def random_grid(template: GridTemplate) -> Grid:

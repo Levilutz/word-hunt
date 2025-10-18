@@ -96,7 +96,7 @@ async def match(
             match_result.game_id,
             match_result.other_session_id,
             session_id,
-            random_grid(random.choice(list(GRID_TEMPLATES.values()))),
+            random_grid(random.choice(list(GRID_TEMPLATES.values()))),  # noqa: S311
         )
 
         return PostMatchResp(game_id=match_result.game_id)
