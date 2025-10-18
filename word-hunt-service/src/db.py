@@ -83,8 +83,7 @@ async def versus_queue_check_poll(
         result = await versus_queue_check(db_conn, session_id)
         if isinstance(result, VersusQueueMatched | VersusQueueExpired):
             return result
-        else:
-            await sleep(poll_interval)
+        await sleep(poll_interval)
     return VersusQueueExpired()
 
 
