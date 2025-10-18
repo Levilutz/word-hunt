@@ -8,8 +8,8 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
+from psycopg import AsyncConnection
 from pydantic import BaseModel
 
 from src import db

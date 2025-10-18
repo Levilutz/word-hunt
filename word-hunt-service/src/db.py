@@ -39,7 +39,7 @@ class VersusQueueMatched:
 
 @dataclass(frozen=True)
 class VersusQueueNoMatchYet:
-    """This session does not yet have a match on the queue, or a matching session was not found."""
+    """This session does not yet have a match / a matching session was not found."""
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ async def versus_queue_check(
     """Check the status of our entry after joining the versus queue."""
 
     # We let it roll for 20 seconds, even tho matching only covers first 15
-    # Better to keep checking when hopeless than to expire concurrent with someone matching us
+    # Better to check too long than to expire concurrent with someone matching us
     query = """
     SELECT * FROM versus_games_match_queue
     WHERE session_id = %s
@@ -95,7 +95,7 @@ async def versus_queue_match(
     """Attempt to match with an existing row on the queue."""
 
     # We only accept conns from within 15 seconds, even tho polling goes for 20
-    # Better to let them keep checking when hopeless than match with someone that concurrently expired
+    # Better to let them check too long than match with someone concurrently expiring
     query = """
     UPDATE versus_games_match_queue
     SET game_id = %s, other_session_id = %s

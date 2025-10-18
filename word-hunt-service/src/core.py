@@ -24,7 +24,7 @@ def list_get(ls: list[T] | None, ind: int) -> T | None:
 
 
 def extract_word(grid: Grid, path: list[Point]) -> str | None:
-    """Extract a word from the grid given a path. Returns None if path invalid or empty."""
+    """Extract a word from the grid given a path. Returns None if path invalid/empty."""
     out = ""
     for point in path:
         item = list_get(list_get(grid, point.y), point.x)
