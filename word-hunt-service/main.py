@@ -33,7 +33,7 @@ async def lifespan(_app: FastAPI):
         if info is None:
             raise Exception("game_mode enum missing")
         register_enum(info, None, GameMode)
-    pool = AsyncConnectionPool(conninfo=POSTGRES_URL)
+    pool = AsyncConnectionPool(conninfo=POSTGRES_URL, kwargs={"autocommit": True})
     await pool.open()
     yield
     await pool.close()
