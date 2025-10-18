@@ -113,11 +113,10 @@ async def match(
     for _ in range(1000):
         result = await db.versus_game_get(db_conn, check_result.game_id)
         if result is not None:
-            break
+            return PostMatchResp(game_id=result.id)
         await sleep(0.1)
-    else:
-        return PostMatchResp(game_id=None)
 
+    # Poll timeout
     return PostMatchResp(game_id=None)
 
 
