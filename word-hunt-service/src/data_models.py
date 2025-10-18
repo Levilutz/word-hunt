@@ -10,6 +10,7 @@ class VersusGamesMatchQueueItem(BaseModel):
     session_id: UUID
     join_time: datetime
     game_id: UUID | None
+    other_session_id: UUID | None
 
 
 class VersusGame(BaseModel):

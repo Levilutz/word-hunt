@@ -1,4 +1,6 @@
+from asyncio import sleep
 from dataclasses import dataclass
+import time
 from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
@@ -31,6 +33,7 @@ class VersusQueueMatched:
     """This session has matched, and has a game id assigned."""
 
     game_id: UUID
+    other_session_id: UUID
 
 
 @dataclass(frozen=True)
@@ -62,11 +65,31 @@ async def versus_queue_check(
             return VersusQueueExpired()
         if result.game_id is None:
             return VersusQueueNoMatchYet()
-        return VersusQueueMatched(game_id=result.game_id)
+        if result.other_session_id is None:
+            raise Exception(f"Missing other session id for game {result.game_id}")
+        return VersusQueueMatched(
+            game_id=result.game_id, other_session_id=result.other_session_id
+        )
+
+
+async def versus_queue_check_poll(
+    db_conn: AsyncConnection, session_id: UUID, poll_interval: float = 0.1
+) -> VersusQueueMatched | VersusQueueExpired:
+    """Check the status of our queue entry repeatedly, until it matches or expires."""
+
+    start_time = time.time()
+    while (time.time() - start_time) < 60:  # Just-in-case limit to 60s
+        result = await versus_queue_check(db_conn, session_id)
+        if isinstance(result, VersusQueueMatched | VersusQueueExpired):
+            return result
+        else:
+            await sleep(poll_interval)
+    return VersusQueueExpired()
 
 
 async def versus_queue_match(
     db_conn: AsyncConnection,
+    session_id: UUID,
 ) -> VersusQueueMatched | VersusQueueNoMatchYet:
     """Attempt to match with an existing row on the queue."""
 
@@ -74,7 +97,7 @@ async def versus_queue_match(
     # Better to let them keep checking when hopeless than match with someone that concurrently expired
     query = """
     UPDATE versus_games_match_queue
-    SET game_id = %s
+    SET game_id = %s, other_session_id = %s
     WHERE session_id = (
             SELECT session_id FROM versus_games_match_queue
             WHERE join_time > NOW() - INTERVAL '15 second'
@@ -84,15 +107,17 @@ async def versus_queue_match(
             FOR UPDATE
         )
         AND join_time > NOW() - INTERVAL '15 second'
-        AND game_id IS NULL;
+        AND game_id IS NULL
+    RETURNING *;
     """
 
-    async with db_conn.cursor() as cur:
+    async with db_conn.cursor(row_factory=class_row(VersusGamesMatchQueueItem)) as cur:
         game_id = uuid4()
-        await cur.execute(query, (game_id,))
-        if cur.rowcount == 0:
+        await cur.execute(query, (game_id, session_id))
+        result = await cur.fetchone()
+        if result is None:
             return VersusQueueNoMatchYet()
-        return VersusQueueMatched(game_id=game_id)
+        return VersusQueueMatched(game_id=game_id, other_session_id=result.session_id)
 
 
 async def versus_game_create(
@@ -101,14 +126,15 @@ async def versus_game_create(
     session_id_a: UUID,
     session_id_b: UUID,
     grid: Grid,
-) -> None:
+) -> VersusGame:
     """Construct a new versus game."""
 
     query = """
     INSERT INTO versus_games (id, session_id_a, session_id_b, grid)
     VALUES (%s, %s, %s, %s)
+    RETURNING *
     """
-    async with db_conn.cursor() as cur:
+    async with db_conn.cursor(row_factory=class_row(VersusGame)) as cur:
         await cur.execute(
             query,
             (
@@ -118,6 +144,10 @@ async def versus_game_create(
                 Jsonb(grid),
             ),
         )
+        result = await cur.fetchone()
+        if result is None:
+            raise Exception("Expected game to exist after insert")
+        return result
 
 
 async def versus_game_get(db_conn: AsyncConnection, game_id: UUID) -> VersusGame | None:
