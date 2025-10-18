@@ -16,5 +16,6 @@ select = [
     "S",
     "SLF",
     "SIM",
+    "UP",
     "W",
 ]

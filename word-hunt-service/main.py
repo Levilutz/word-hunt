@@ -1,9 +1,10 @@
 import os
 import random
 from asyncio import sleep
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Annotated, AsyncGenerator
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
