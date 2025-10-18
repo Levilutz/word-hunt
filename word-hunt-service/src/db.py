@@ -3,7 +3,6 @@ from uuid import UUID
 from psycopg import AsyncConnection
 from psycopg.rows import class_row
 from psycopg.types.json import Jsonb
-import redis.asyncio as redis
 
 from src.data_models import Game, GameSubmittedWord
 from src.constants import GAME_AUTO_END_SECS
@@ -82,8 +81,3 @@ async def get_submitted_words(
             "SELECT * FROM game_submitted_words WHERE game_id = %s", (game_id,)
         )
         return await cur.fetchall()
-
-
-async def redis_echo(redis: redis.Redis) -> None:
-    redis.ping()
-    print(await redis.echo("Hello World!"))

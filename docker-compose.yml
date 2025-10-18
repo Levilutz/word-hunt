@@ -6,11 +6,6 @@ services:
     ports:
       - 5432:5432
 
-  word-hunt-redis:
-    image: redis:8.2.1-alpine
-    ports:
-      - 6379:6379
-
   word-hunt-migrations:
     depends_on:
       word-hunt-db:
