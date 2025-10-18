@@ -56,7 +56,7 @@ async def get_session_id(request: Request, response: Response) -> UUID:
 
 async def get_db_conn() -> AsyncGenerator[AsyncConnection]:
     if pool is None:
-        raise Exception("Cannot access connection pool")
+        raise ValueError("Cannot access connection pool")
     async with pool.connection() as db_conn:
         yield db_conn
 

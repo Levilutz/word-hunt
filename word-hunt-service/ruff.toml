@@ -13,9 +13,12 @@ select = [
     "PIE",
     "PL",
     "RET",
+    "RUF",
     "S",
     "SLF",
     "SIM",
+    "TRY",
     "UP",
     "W",
 ]
+ignore = ["TRY003"]

@@ -67,7 +67,7 @@ async def versus_queue_check(
         if result.game_id is None:
             return VersusQueueNoMatchYet()
         if result.other_session_id is None:
-            raise Exception(f"Missing other session id for game {result.game_id}")
+            raise ValueError(f"Missing other session id for game {result.game_id}")
         return VersusQueueMatched(
             game_id=result.game_id, other_session_id=result.other_session_id
         )
@@ -149,7 +149,7 @@ async def versus_game_create(
         )
         result = await cur.fetchone()
         if result is None:
-            raise Exception("Expected game to exist after insert")
+            raise ValueError("Expected game to exist after insert")
         return result
 
 
@@ -168,7 +168,7 @@ async def versus_game_set_player_done(
 
     # Just to be safe against injection
     if player != "a" and player != "b":  # noqa: PLR1714
-        raise Exception(f"Invalid player id: {player}")
+        raise ValueError(f"Invalid player id: {player}")
 
     query = f"""
     UPDATE versus_games
