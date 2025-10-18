@@ -1,12 +1,12 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS games_match_queue(
+CREATE TABLE IF NOT EXISTS versus_games_match_queue(
     session_id UUID PRIMARY KEY,
     join_time TIMESTAMP NOT NULL,
     game_id UUID
 );
 
-CREATE INDEX games_match_queue_last_ping_time_join_time ON games_match_queue (last_ping_time, join_time);
+CREATE INDEX versus_games_match_queue_join_time ON versus_games_match_queue (join_time);
 
 CREATE TABLE IF NOT EXISTS versus_games(
     id UUID PRIMARY KEY,
