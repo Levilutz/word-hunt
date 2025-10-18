@@ -1,15 +1,15 @@
+import os
+import random
 from asyncio import sleep
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-import os
-import random
-from typing import AsyncGenerator, Annotated
+from typing import Annotated, AsyncGenerator
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg_pool import AsyncConnectionPool
 from psycopg import AsyncConnection
+from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from src import db
@@ -18,7 +18,6 @@ from src.core import Grid, Point, extract_word, points_for_words
 from src.data_models import VersusGameSubmittedWord
 from src.grid_templates import GRID_TEMPLATES
 from src.utils import random_grid
-
 
 ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")

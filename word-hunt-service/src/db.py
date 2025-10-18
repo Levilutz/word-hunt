@@ -1,6 +1,6 @@
+import time
 from asyncio import sleep
 from dataclasses import dataclass
-import time
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -11,8 +11,8 @@ from psycopg.types.json import Jsonb
 from src.core import Grid
 from src.data_models import (
     VersusGame,
-    VersusGameSubmittedWord,
     VersusGamesMatchQueueItem,
+    VersusGameSubmittedWord,
 )
 
 

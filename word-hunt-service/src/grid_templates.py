@@ -2,7 +2,6 @@ from typing import Literal
 
 from src.core import GridTemplate
 
-
 GridTemplateName = Literal["standard", "o", "x", "big"]
 
 GRID_TEMPLATES: dict[GridTemplateName, GridTemplate] = {
