@@ -74,12 +74,15 @@ async def versus_queue_check(
 
 
 async def versus_queue_check_poll(
-    db_conn: AsyncConnection, session_id: UUID, poll_interval: float = 0.1
+    db_conn: AsyncConnection,
+    session_id: UUID,
+    poll_interval: float = 0.1,
+    limit_poll_time: float = 60.0,
 ) -> VersusQueueMatched | VersusQueueExpired:
     """Check the status of our queue entry repeatedly, until it matches or expires."""
 
     start_time = time.time()
-    while (time.time() - start_time) < 60:  # Just-in-case limit to 60s
+    while (time.time() - start_time) < limit_poll_time:  # Just-in-case limit
         result = await versus_queue_check(db_conn, session_id)
         if isinstance(result, VersusQueueMatched | VersusQueueExpired):
             return result
@@ -164,7 +167,7 @@ async def versus_game_set_player_done(
     """Set the given player to be done submitting words."""
 
     # Just to be safe against injection
-    if player != "a" and player != "b":
+    if player != "a" and player != "b":  # noqa: PLR1714
         raise Exception(f"Invalid player id: {player}")
 
     query = f"""

@@ -27,7 +27,7 @@ pool: AsyncConnectionPool | None = None
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    global pool
+    global pool  # noqa: PLW0603
     async with AsyncConnectionPool(
         conninfo=POSTGRES_URL,
         connection_class=AsyncConnection,
@@ -145,7 +145,7 @@ async def get_game(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    if session_id != game.session_id_a and session_id != game.session_id_b:
+    if session_id not in {game.session_id_a, game.session_id_b}:
         raise HTTPException(status_code=403)
 
     # Determine if game ended (automatically or both users complete)
@@ -194,7 +194,7 @@ async def game_submit_words(
         raise HTTPException(status_code=404)
 
     # Ensure user has access to this game
-    if session_id != game.session_id_a and session_id != game.session_id_b:
+    if session_id not in {game.session_id_a, game.session_id_b}:
         raise HTTPException(status_code=403)
 
     # Determine if we're allowed to submit words
@@ -240,7 +240,7 @@ async def game_set_player_done(
         raise HTTPException(status_code=404)
 
     # Ensure user has access to this game
-    if session_id != game.session_id_a and session_id != game.session_id_b:
+    if session_id not in {game.session_id_a, game.session_id_b}:
         raise HTTPException(status_code=403)
 
     # Set the given player to be done
