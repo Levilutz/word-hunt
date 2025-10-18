@@ -14,7 +14,8 @@ from pydantic import BaseModel
 
 from src import db
 from src.constants import GAME_AUTO_END_SECS
-from src.core import Grid, points_for_words
+from src.core import Grid, Point, extract_word, points_for_words
+from src.data_models import VersusGameSubmittedWord
 from src.grid_templates import GRID_TEMPLATES
 from src.utils import random_grid
 
@@ -170,4 +171,82 @@ async def get_game(
         other_player=GetGameRespPlayer(
             points=points_for_words(other_player_words), words=other_player_words
         ),
+    )
+
+
+class SubmitWordsReq(BaseModel):
+    paths: list[list[Point]]
+
+
+@app.post("/game/{game_id}/submit-words")
+async def game_submit_words(
+    game_id: UUID,
+    req: SubmitWordsReq,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: AsyncConnection = Depends(get_db_conn),
+) -> None:
+    # Ensure paths submitted
+    if len(req.paths) == 0:
+        raise HTTPException(status_code=400, detail="No paths provided")
+
+    # Pull the game
+    game = await db.versus_game_get(db_conn, game_id)
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    # Ensure user has access to this game
+    if session_id != game.session_id_a and session_id != game.session_id_b:
+        raise HTTPException(status_code=403)
+
+    # Determine if we're allowed to submit words
+    auto_ended = (datetime.now() - game.created_at) > timedelta(
+        seconds=GAME_AUTO_END_SECS
+    )
+    us_done = (session_id == game.session_id_a and game.session_id_a_done) or (
+        session_id == game.session_id_b and game.session_id_b_done
+    )
+    if auto_ended or us_done:
+        raise HTTPException(status_code=400, detail="Submissions no longer accepted")
+
+    # Build db input and validate as we go
+    submitted_words: list[VersusGameSubmittedWord] = []
+    for i, path in enumerate(req.paths):
+        word = extract_word(game.grid, path)
+        if word is None:
+            raise HTTPException(status_code=400, detail=f"Path {i} invalid")
+        # TODO: Validate word in dictionary
+        submitted_words.append(
+            VersusGameSubmittedWord(
+                id=uuid4(),
+                game_id=game_id,
+                session_id=session_id,
+                tile_path=path,
+                word=word,
+            )
+        )
+
+    # Insert the words into the db
+    await db.versus_game_submit_words(db_conn, submitted_words)
+
+
+@app.post("/game/{game_id}/done")
+async def game_set_player_done(
+    game_id: UUID,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: AsyncConnection = Depends(get_db_conn),
+) -> None:
+    # Pull the game
+    game = await db.versus_game_get(db_conn, game_id)
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    # Ensure user has access to this game
+    if session_id != game.session_id_a and session_id != game.session_id_b:
+        raise HTTPException(status_code=403)
+
+    # Set the given player to be done
+    await db.versus_game_set_player_done(
+        db_conn,
+        game_id,
+        "a" if session_id == game.session_id_a else "b",
     )

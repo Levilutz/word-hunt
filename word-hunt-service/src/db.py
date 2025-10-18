@@ -1,6 +1,7 @@
 from asyncio import sleep
 from dataclasses import dataclass
 import time
+from typing import Literal
 from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
@@ -156,6 +157,24 @@ async def versus_game_get(db_conn: AsyncConnection, game_id: UUID) -> VersusGame
     async with db_conn.cursor(row_factory=class_row(VersusGame)) as cur:
         await cur.execute("SELECT * FROM versus_games WHERE id = %s", (game_id,))
         return await cur.fetchone()
+
+
+async def versus_game_set_player_done(
+    db_conn: AsyncConnection, game_id: UUID, player: Literal["a", "b"]
+):
+    """Set the given player to be done submitting words."""
+
+    # Just to be safe against injection
+    if player != "a" and player != "b":
+        raise Exception(f"Invalid player id: {player}")
+
+    query = f"""
+    UPDATE versus_games
+    SET session_id_{player}_done = TRUE
+    WHERE game_id = %s
+    """
+
+    await db_conn.execute(query, (game_id,))
 
 
 async def versus_game_submit_words(
