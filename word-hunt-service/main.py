@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 import os
 import random
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Annotated
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -84,8 +84,8 @@ class PostMatchResp(BaseModel):
 
 @app.post("/match")
 async def match(
-    session_id: UUID = Depends(get_session_id),
-    db_conn: AsyncConnection = Depends(get_db_conn),
+    session_id: Annotated[UUID, Depends(get_session_id)],
+    db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> PostMatchResp:
     # First, try to match with an existing player
     match_result = await db.versus_queue_match(db_conn, session_id)
@@ -137,8 +137,8 @@ class GetGameResp(BaseModel):
 @app.get("/game/{game_id}")
 async def get_game(
     game_id: UUID,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: AsyncConnection = Depends(get_db_conn),
+    session_id: Annotated[UUID, Depends(get_session_id)],
+    db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> GetGameResp:
     # Get the game, 404 if not present
     game = await db.versus_game_get(db_conn, game_id)
@@ -182,8 +182,8 @@ class SubmitWordsReq(BaseModel):
 async def game_submit_words(
     game_id: UUID,
     req: SubmitWordsReq,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: AsyncConnection = Depends(get_db_conn),
+    session_id: Annotated[UUID, Depends(get_session_id)],
+    db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> None:
     # Ensure paths submitted
     if len(req.paths) == 0:
@@ -232,8 +232,8 @@ async def game_submit_words(
 @app.post("/game/{game_id}/done")
 async def game_set_player_done(
     game_id: UUID,
-    session_id: UUID = Depends(get_session_id),
-    db_conn: AsyncConnection = Depends(get_db_conn),
+    session_id: Annotated[UUID, Depends(get_session_id)],
+    db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> None:
     # Pull the game
     game = await db.versus_game_get(db_conn, game_id)
