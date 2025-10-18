@@ -6,6 +6,12 @@ from pydantic import BaseModel
 from src.core import GameMode, Grid, Point
 
 
+class VersusGamesMatchQueue(BaseModel):
+    session_id: UUID
+    join_time: datetime
+    game_id: UUID | None
+
+
 class Game(BaseModel):
     id: UUID
     created_at: datetime
