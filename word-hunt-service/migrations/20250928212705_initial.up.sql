@@ -10,7 +10,7 @@ CREATE INDEX versus_games_match_queue_join_time ON versus_games_match_queue (joi
 
 CREATE TABLE IF NOT EXISTS versus_games(
     id UUID PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     session_id_a UUID NOT NULL,
     session_id_b UUID NOT NULL,
     grid JSONB NOT NULL
