@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS versus_games_match_queue(
     session_id UUID PRIMARY KEY,
     join_time TIMESTAMP NOT NULL DEFAULT NOW(),
-    game_id UUID
+    game_id UUID,
     other_session_id UUID
 );
 
