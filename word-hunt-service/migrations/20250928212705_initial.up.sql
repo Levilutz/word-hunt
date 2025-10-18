@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS versus_games(
     id UUID PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     session_id_a UUID NOT NULL,
+    session_id_a_done BOOLEAN NOT NULL DEFAULT FALSE,
     session_id_b UUID NOT NULL,
+    session_id_b_done BOOLEAN NOT NULL DEFAULT FALSE,
     grid JSONB NOT NULL
 );
 

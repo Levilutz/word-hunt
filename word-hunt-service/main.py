@@ -1,18 +1,21 @@
 from asyncio import sleep
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 import os
 import random
 from typing import AsyncGenerator
 from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from src import db
-from src.grid_templates import GridTemplateName, GRID_TEMPLATES
+from src.constants import GAME_AUTO_END_SECS
+from src.core import Grid, points_for_words
+from src.grid_templates import GRID_TEMPLATES
 from src.utils import random_grid
 
 
@@ -115,3 +118,56 @@ async def match(
         return PostMatchResp(game_id=None)
 
     return PostMatchResp(game_id=None)
+
+
+class GetGameRespPlayer(BaseModel):
+    points: int
+    words: list[str]
+
+
+class GetGameResp(BaseModel):
+    game_id: UUID
+    grid: Grid
+    ended: bool
+    this_player: GetGameRespPlayer
+    other_player: GetGameRespPlayer
+
+
+@app.get("/game/{game_id}")
+async def get_game(
+    game_id: UUID,
+    session_id: UUID = Depends(get_session_id),
+    db_conn: AsyncConnection = Depends(get_db_conn),
+) -> GetGameResp:
+    # Get the game, 404 if not present
+    game = await db.versus_game_get(db_conn, game_id)
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    # Ensure this session is a participant in the game
+    if session_id != game.session_id_a and session_id != game.session_id_b:
+        raise HTTPException(status_code=403)
+
+    # Determine if game ended (automatically or both users complete)
+    auto_ended = (datetime.now() - game.created_at) > timedelta(
+        seconds=GAME_AUTO_END_SECS
+    )
+    both_done = game.session_id_a_done and game.session_id_b_done
+
+    # Pull and categorize the game's submitted words
+    game_words = await db.versus_game_get_words(db_conn, game.id)
+    this_player_words = [gw.word for gw in game_words if gw.session_id == session_id]
+    other_player_words = [gw.word for gw in game_words if gw.session_id != session_id]
+
+    # Build resp
+    return GetGameResp(
+        game_id=game.id,
+        grid=game.grid,
+        ended=auto_ended or both_done,
+        this_player=GetGameRespPlayer(
+            points=points_for_words(this_player_words), words=this_player_words
+        ),
+        other_player=GetGameRespPlayer(
+            points=points_for_words(other_player_words), words=other_player_words
+        ),
+    )
