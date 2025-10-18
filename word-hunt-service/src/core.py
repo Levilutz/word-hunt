@@ -14,13 +14,13 @@ class Point(BaseModel):
     y: int
 
 
-def list_get(l: list[T] | None, ind: int) -> T | None:
+def list_get(ls: list[T] | None, ind: int) -> T | None:
     """Get an item from the list, if present. Default to None."""
-    if l is None:
+    if ls is None:
         return None
-    if ind < 0 or ind >= len(l):
+    if ind < 0 or ind >= len(ls):
         return None
-    return l[ind]
+    return ls[ind]
 
 
 def extract_word(grid: Grid, path: list[Point]) -> str | None:
