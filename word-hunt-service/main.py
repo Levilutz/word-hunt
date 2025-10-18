@@ -13,7 +13,7 @@ from psycopg.types.enum import EnumInfo, register_enum
 
 from src.utils import random_grid
 from src.constants import GAME_AUTO_END_SECS
-from src.core import GameMode, Grid, Point, extract_word, points_for_words
+from src.core import Grid, Point, extract_word, points_for_words
 from src.db import create_game, get_game, join_game, submit_words, get_submitted_words
 from src.grid_templates import GridTemplateName, GRID_TEMPLATES
 from src.data_models import Game, GameSubmittedWord
@@ -28,11 +28,6 @@ pool: AsyncConnectionPool | None = None
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     global pool
-    async with await psycopg.AsyncConnection.connect(POSTGRES_URL) as conn:
-        info = await EnumInfo.fetch(conn, "game_mode")
-        if info is None:
-            raise Exception("game_mode enum missing")
-        register_enum(info, None, GameMode)
     pool = AsyncConnectionPool(conninfo=POSTGRES_URL, kwargs={"autocommit": True})
     await pool.open()
     yield

@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -8,12 +7,6 @@ T = TypeVar("T")
 
 Grid = list[list[str | None]]
 GridTemplate = list[list[bool]]
-
-
-class GameMode(Enum):
-    versus = "versus"
-    solo = "solo"
-    solve = "solve"
 
 
 class Point(BaseModel):
