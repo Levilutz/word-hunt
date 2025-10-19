@@ -1,21 +1,21 @@
-import { createFileRoute, createLink, type LinkComponent } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+} from "@tanstack/react-router";
 import { Configuration, DefaultApi } from "@/clients/word-hunt-service";
 import Header from "@/components/Header";
-import {
-  type ButtonHTMLAttributes,
-  type Ref,
-} from "react";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
+  const navigate = useNavigate({ from: "/" });
   return (
     <>
       <Header />
       <h1>Word Hunt</h1>
-      <ButtonLink to="/match">Nav to match!</ButtonLink>
+      <button onClick={() => navigate({ to: "/match" })}>Nav to match!</button>
       <button
         onClick={() => {
           const config = new Configuration({
@@ -28,19 +28,4 @@ function App() {
       </button>
     </>
   );
-}
-
-interface ButtonLinkProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
-
-const ButtonLinkComponent = (
-  props: ButtonLinkProps & { ref?: Ref<HTMLButtonElement> },
-) => {
-  const { ref, ...rest } = props;
-  return <button ref={ref} {...rest} />;
-};
-
-const CreatedButtonLinkComponent = createLink(ButtonLinkComponent);
-
-const ButtonLink: LinkComponent<typeof ButtonLinkComponent> = (props) => {
-  return <CreatedButtonLinkComponent preload="intent" {...props} />
 }
