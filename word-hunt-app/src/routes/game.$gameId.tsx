@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { rawClient } from "@/clients/word-hunt-service-client-instance";
+import { client } from "@/clients/word-hunt-service-client-instance";
 import GamePlay from "@/components/GamePlay";
 import GameResult from "@/components/GameResult";
 
@@ -12,7 +12,7 @@ function RouteComponent() {
   const { gameId } = useParams({ from: "/game/$gameId" });
   const { isPending, error, data } = useQuery({
     queryKey: ["game", gameId],
-    queryFn: () => rawClient.getGameGameGameIdGet({ gameId }),
+    queryFn: () => client.getGameGameGameIdGet({ gameId }),
   });
 
   if (isPending) {

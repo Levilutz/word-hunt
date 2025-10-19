@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { rawClient } from "@/clients/word-hunt-service-client-instance";
+import { client } from "@/clients/word-hunt-service-client-instance";
 import Header from "@/components/Header";
 
 export const Route = createFileRoute("/")({
@@ -22,7 +22,7 @@ function App() {
         onClick={() => {
           setButtonText("Matching...");
           setMatching(true);
-          rawClient
+          client
             .matchMatchPost()
             .then((resp) => {
               if (resp.gameId != null) {
@@ -47,7 +47,7 @@ function App() {
       <button
         type="button"
         onClick={() => {
-          rawClient.cookie0Cookie0Get();
+          client.cookie0Cookie0Get();
         }}
       >
         Set Cookie

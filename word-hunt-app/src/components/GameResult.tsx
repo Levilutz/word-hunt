@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { rawClient } from "@/clients/word-hunt-service-client-instance";
+import { client } from "@/clients/word-hunt-service-client-instance";
 
 export default function GameResult({ gameId }: { gameId: string }) {
   console.log("Rendering result");
   const { isPending, error, data } = useQuery({
     queryKey: ["game", gameId],
-    queryFn: () => rawClient.getGameGameGameIdGet({ gameId }),
+    queryFn: () => client.getGameGameGameIdGet({ gameId }),
   });
 
   if (isPending || error != null) {
