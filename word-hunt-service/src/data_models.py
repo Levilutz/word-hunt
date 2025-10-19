@@ -19,8 +19,10 @@ class VersusGame(BaseModel):
     id: UUID
     created_at: datetime
     session_id_a: UUID
+    session_id_a_start: datetime | None
     session_id_a_done: bool
     session_id_b: UUID
+    session_id_b_start: datetime | None
     session_id_b_done: bool
     grid: Grid
 

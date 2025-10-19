@@ -24,7 +24,7 @@ async def versus_queue_join(db_conn: AsyncConnection, session_id: UUID) -> UUID:
 
     query = """
     INSERT INTO versus_games_match_queue (id, session_id)
-    VALUES (%s, %s);
+    VALUES (%s, %s)
     """
     queue_entry_id = uuid4()
     await db_conn.execute(
@@ -65,7 +65,7 @@ async def versus_queue_check(
     query = """
     SELECT * FROM versus_games_match_queue
     WHERE id = %s
-        AND join_time > NOW() - INTERVAL '20 second';
+        AND join_time > NOW() - INTERVAL '20 second'
     """
     async with db_conn.cursor(row_factory=class_row(VersusGamesMatchQueueItem)) as cur:
         await cur.execute(query, (queue_entry_id,))
@@ -112,8 +112,8 @@ async def versus_queue_match(
     WHERE session_id = (
             SELECT session_id FROM versus_games_match_queue
             WHERE join_time > NOW() - INTERVAL '15 second'
-            AND game_id IS NULL
-            AND session_id != %s
+                AND game_id IS NULL
+                AND session_id != %s
             ORDER BY join_time ASC
             LIMIT 1
             FOR UPDATE
@@ -121,7 +121,7 @@ async def versus_queue_match(
         AND join_time > NOW() - INTERVAL '15 second'
         AND game_id IS NULL
         AND session_id != %s
-    RETURNING *;
+    RETURNING *
     """
 
     async with db_conn.cursor(row_factory=class_row(VersusGamesMatchQueueItem)) as cur:
@@ -171,6 +171,25 @@ async def versus_game_get(db_conn: AsyncConnection, game_id: UUID) -> VersusGame
         return await cur.fetchone()
 
 
+async def versus_game_set_player_start(
+    db_conn: AsyncConnection, game_id: UUID, player: Literal["a", "b"]
+):
+    """Set the given player to be done submitting words."""
+
+    # Just to be safe against injection
+    if player != "a" and player != "b":  # noqa: PLR1714
+        raise ValueError(f"Invalid player id: {player}")
+
+    query = f"""
+    UPDATE versus_games
+    SET session_id_{player}_start = NOW()
+    WHERE id = %s
+        AND session_id_{player}_start IS NULL
+    """  # noqa: S608
+
+    await db_conn.execute(query, (game_id,))
+
+
 async def versus_game_set_player_done(
     db_conn: AsyncConnection, game_id: UUID, player: Literal["a", "b"]
 ):
@@ -183,7 +202,7 @@ async def versus_game_set_player_done(
     query = f"""
     UPDATE versus_games
     SET session_id_{player}_done = TRUE
-    WHERE game_id = %s
+    WHERE id = %s
     """  # noqa: S608
 
     await db_conn.execute(query, (game_id,))

@@ -15,8 +15,10 @@ CREATE TABLE IF NOT EXISTS versus_games(
     id UUID PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     session_id_a UUID NOT NULL,
+    session_id_a_start TIMESTAMP,
     session_id_a_done BOOLEAN NOT NULL DEFAULT FALSE,
     session_id_b UUID NOT NULL,
+    session_id_b_start TIMESTAMP,
     session_id_b_done BOOLEAN NOT NULL DEFAULT FALSE,
     grid JSONB NOT NULL
 );
@@ -47,7 +49,7 @@ VALUES (
     '[["A", "B", "C", "D"], ["E", "F", "G", "H"], ["I", "J", "K", "L"], ["M", "N", "O", "P"]]'
 );
 
-INSERT INTO versus_game_submitted_words VALUES (id, game_id, session_id, tile_path, word)
+INSERT INTO versus_game_submitted_words (id, game_id, session_id, tile_path, word)
 VALUES
     ('389f5115-50d1-4509-bede-8a883d5f849a', '4c35e055-fe2e-41b0-aa50-1e7cb3641ff9', '096c16c7-94ec-493f-8ae6-ea55a37eb730', '[{"x": 3, "y": 2}, {"x": 2, "y": 3}, {"x": 3, "y": 3}]', 'LOP'),
     ('ee829a23-3f66-4d9b-b5a5-a410f36374e2', '4c35e055-fe2e-41b0-aa50-1e7cb3641ff9', '00000000-0000-4000-8000-000000000000', '[{"x": 1, "y": 0}, {"x": 0, "y": 0}, {"x": 0, "y": 1}]', 'BAE'),

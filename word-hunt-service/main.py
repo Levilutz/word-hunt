@@ -14,7 +14,7 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from src import db
-from src.constants import GAME_AUTO_END_SECS
+from src.constants import GAME_AUTO_END_SECS, GAME_DURATION_SECS
 from src.core import Grid, Point, extract_word, points_for_words
 from src.data_models import VersusGameSubmittedWord
 from src.grid_templates import GRID_TEMPLATES
@@ -131,6 +131,7 @@ async def match(
 
 
 class GetGameRespPlayer(BaseModel):
+    seconds_remaining: float | None
     points: int
     words: list[str]
 
@@ -149,6 +150,9 @@ async def get_game(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> GetGameResp:
+    # Consistent value over fn execution
+    now = datetime.now()
+
     # Get the game, 404 if not present
     game = await db.versus_game_get(db_conn, game_id)
     if game is None:
@@ -159,10 +163,20 @@ async def get_game(
         raise HTTPException(status_code=403)
 
     # Determine if game ended (automatically or both users complete)
-    auto_ended = (datetime.now() - game.created_at) > timedelta(
-        seconds=GAME_AUTO_END_SECS
-    )
+    auto_ended = (now - game.created_at) > timedelta(seconds=GAME_AUTO_END_SECS)
     both_done = game.session_id_a_done and game.session_id_b_done
+
+    # Determine when each player should end based on their reported start time
+    session_a_secs_remaining = (
+        max(GAME_DURATION_SECS - (now - game.session_id_a_start).total_seconds(), 0)
+        if game.session_id_a_start is not None
+        else None
+    )
+    session_b_secs_remaining = (
+        max(GAME_DURATION_SECS - (now - game.session_id_b_start).total_seconds(), 0)
+        if game.session_id_b_start is not None
+        else None
+    )
 
     # Pull and categorize the game's submitted words
     game_words = await db.versus_game_get_words(db_conn, game.id)
@@ -179,11 +193,45 @@ async def get_game(
         grid=game.grid,
         ended=auto_ended or both_done,
         this_player=GetGameRespPlayer(
-            points=points_for_words(this_player_words), words=this_player_words
+            seconds_remaining=(
+                session_a_secs_remaining
+                if session_id == game.session_id_a
+                else session_b_secs_remaining
+            ),
+            points=points_for_words(this_player_words),
+            words=this_player_words,
         ),
         other_player=GetGameRespPlayer(
-            points=points_for_words(other_player_words), words=other_player_words
+            seconds_remaining=(
+                session_b_secs_remaining
+                if session_id == game.session_id_a
+                else session_a_secs_remaining
+            ),
+            points=points_for_words(other_player_words),
+            words=other_player_words,
         ),
+    )
+
+
+@app.post("/game/{game_id}/start")
+async def game_start(
+    game_id: UUID,
+    session_id: Annotated[UUID, Depends(get_session_id)],
+    db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
+) -> None:
+    # Pull the game
+    game = await db.versus_game_get(db_conn, game_id)
+    if game is None:
+        raise HTTPException(status_code=404)
+
+    # Ensure user has access to this game
+    if session_id not in {game.session_id_a, game.session_id_b}:
+        raise HTTPException(status_code=403)
+
+    await db.versus_game_set_player_start(
+        db_conn,
+        game_id,
+        "a" if session_id == game.session_id_a else "b",
     )
 
 
