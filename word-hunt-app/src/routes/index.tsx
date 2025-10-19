@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, createLink, type LinkComponent } from "@tanstack/react-router";
 import { Configuration, DefaultApi } from "@/clients/word-hunt-service";
 import Header from "@/components/Header";
-import logo from "../logo.svg";
+import {
+  type ButtonHTMLAttributes,
+  type Ref,
+} from "react";
 
 export const Route = createFileRoute("/")({
   component: App,
@@ -12,6 +15,7 @@ function App() {
     <>
       <Header />
       <h1>Word Hunt</h1>
+      <ButtonLink to="/match">Nav to match!</ButtonLink>
       <button
         onClick={() => {
           const config = new Configuration({
@@ -24,4 +28,19 @@ function App() {
       </button>
     </>
   );
+}
+
+interface ButtonLinkProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
+
+const ButtonLinkComponent = (
+  props: ButtonLinkProps & { ref?: Ref<HTMLButtonElement> },
+) => {
+  const { ref, ...rest } = props;
+  return <button ref={ref} {...rest} />;
+};
+
+const CreatedButtonLinkComponent = createLink(ButtonLinkComponent);
+
+const ButtonLink: LinkComponent<typeof ButtonLinkComponent> = (props) => {
+  return <CreatedButtonLinkComponent preload="intent" {...props} />
 }
