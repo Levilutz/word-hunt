@@ -16,7 +16,7 @@ function App() {
       <button
         onClick={() => {
           const config = new Configuration({
-            basePath: "http://localhost:8000",
+            basePath: "http://localhost:5173/api",
           });
           new DefaultApi(config).pingPingGet().then((res) => console.log(res));
         }}
