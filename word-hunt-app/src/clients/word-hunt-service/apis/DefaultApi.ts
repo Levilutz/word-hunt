@@ -35,6 +35,10 @@ export interface GameSetPlayerDoneGameGameIdDonePostRequest {
     gameId: string;
 }
 
+export interface GameStartGameGameIdStartPostRequest {
+    gameId: string;
+}
+
 export interface GameSubmitWordsGameGameIdSubmitWordsPostRequest {
     gameId: string;
     submitWordsReq: SubmitWordsReq;
@@ -120,6 +124,47 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async gameSetPlayerDoneGameGameIdDonePost(requestParameters: GameSetPlayerDoneGameGameIdDonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.gameSetPlayerDoneGameGameIdDonePostRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Game Start
+     */
+    async gameStartGameGameIdStartPostRaw(requestParameters: GameStartGameGameIdStartPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['gameId'] == null) {
+            throw new runtime.RequiredError(
+                'gameId',
+                'Required parameter "gameId" was null or undefined when calling gameStartGameGameIdStartPost().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/game/{game_id}/start`;
+        urlPath = urlPath.replace(`{${"game_id"}}`, encodeURIComponent(String(requestParameters['gameId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Game Start
+     */
+    async gameStartGameGameIdStartPost(requestParameters: GameStartGameGameIdStartPostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.gameStartGameGameIdStartPostRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

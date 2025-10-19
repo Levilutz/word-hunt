@@ -24,6 +24,12 @@ export interface GetGameRespPlayer {
      * @type {number}
      * @memberof GetGameRespPlayer
      */
+    secondsRemaining: number | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof GetGameRespPlayer
+     */
     points: number;
     /**
      * 
@@ -37,6 +43,7 @@ export interface GetGameRespPlayer {
  * Check if a given object implements the GetGameRespPlayer interface.
  */
 export function instanceOfGetGameRespPlayer(value: object): value is GetGameRespPlayer {
+    if (!('secondsRemaining' in value) || value['secondsRemaining'] === undefined) return false;
     if (!('points' in value) || value['points'] === undefined) return false;
     if (!('words' in value) || value['words'] === undefined) return false;
     return true;
@@ -52,6 +59,7 @@ export function GetGameRespPlayerFromJSONTyped(json: any, ignoreDiscriminator: b
     }
     return {
         
+        'secondsRemaining': json['seconds_remaining'],
         'points': json['points'],
         'words': json['words'],
     };
@@ -68,6 +76,7 @@ export function GetGameRespPlayerToJSONTyped(value?: GetGameRespPlayer | null, i
 
     return {
         
+        'seconds_remaining': value['secondsRemaining'],
         'points': value['points'],
         'words': value['words'],
     };
