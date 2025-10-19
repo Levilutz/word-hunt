@@ -11,8 +11,7 @@ function App() {
   return (
     <>
       <Header />
-      <h1>Hello World!</h1>
-      <img src={logo} width="100px" alt="logo" />
+      <h1>Word Hunt</h1>
       <button
         onClick={() => {
           const config = new Configuration({
