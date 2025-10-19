@@ -156,8 +156,12 @@ async def get_game(
 
     # Pull and categorize the game's submitted words
     game_words = await db.versus_game_get_words(db_conn, game.id)
-    this_player_words = [gw.word for gw in game_words if gw.session_id == session_id]
-    other_player_words = [gw.word for gw in game_words if gw.session_id != session_id]
+    this_player_words = list(
+        {gw.word for gw in game_words if gw.session_id == session_id}
+    )
+    other_player_words = list(
+        {gw.word for gw in game_words if gw.session_id != session_id}
+    )
 
     # Build resp
     return GetGameResp(
