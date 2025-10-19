@@ -78,8 +78,6 @@ services:
     build:
       context: word-hunt-app
       target: dev
-    environment:
-      FOO: BAR
     volumes: # We mount each entity to avoid accidentally mounting node_modules
       - ./word-hunt-app/public:/app/public
       - ./word-hunt-app/src:/app/src

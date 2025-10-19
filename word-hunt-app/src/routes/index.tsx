@@ -1,8 +1,5 @@
-import {
-  createFileRoute,
-  useNavigate,
-} from "@tanstack/react-router";
-import { Configuration, DefaultApi } from "@/clients/word-hunt-service";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { client } from "@/clients/word-hunt-service-client-instance";
 import Header from "@/components/Header";
 
 export const Route = createFileRoute("/")({
@@ -15,13 +12,12 @@ function App() {
     <>
       <Header />
       <h1>Word Hunt</h1>
-      <button onClick={() => navigate({ to: "/match" })}>Nav to match!</button>
+      <button onClick={() => navigate({ to: "/match" })}>Start</button>
       <button
         onClick={() => {
-          const config = new Configuration({
-            basePath: "http://localhost:5173/api",
+          client.pingPingGet().then((res) => {
+            console.log(res);
           });
-          new DefaultApi(config).pingPingGet().then((res) => console.log(res));
         }}
       >
         Click me!
