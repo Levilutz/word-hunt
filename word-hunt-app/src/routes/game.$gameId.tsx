@@ -1,4 +1,6 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
+import GamePlay from "@/components/GamePlay";
+import GameResult from "@/components/GameResult";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: RouteComponent,
@@ -6,5 +8,11 @@ export const Route = createFileRoute("/game/$gameId")({
 
 function RouteComponent() {
   const { gameId } = useParams({ from: "/game/$gameId" });
-  return <div>{`Hello "/game/${gameId}!`}</div>;
+  return (
+    <>
+      <h1>{`Hello "/game/${gameId}!`}</h1>
+      <GamePlay />
+      <GameResult />
+    </>
+  );
 }
