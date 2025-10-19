@@ -102,10 +102,10 @@ async def match(
         return PostMatchResp(game_id=match_result.game_id)
 
     # We didn't match, join the queue
-    await db.versus_queue_join(db_conn, session_id)
+    queue_entry_id = await db.versus_queue_join(db_conn, session_id)
 
     # Poll until we're assigned a match, or exit if expired
-    check_result = await db.versus_queue_check_poll(db_conn, session_id)
+    check_result = await db.versus_queue_check_poll(db_conn, queue_entry_id)
     if isinstance(check_result, db.VersusQueueExpired):
         return PostMatchResp(game_id=None)
 

@@ -1,10 +1,12 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS versus_games_match_queue(
-    session_id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY,
+    session_id UUID NOT NULL,
     join_time TIMESTAMP NOT NULL DEFAULT NOW(),
     game_id UUID,
-    other_session_id UUID
+    other_session_id UUID,
+    match_time TIMESTAMP
 );
 
 CREATE INDEX versus_games_match_queue_join_time ON versus_games_match_queue (join_time);
