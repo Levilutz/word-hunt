@@ -159,22 +159,22 @@ async def get_game(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    if session_id not in {game.session_id_a, game.session_id_b}:
+    if session_id not in {game.session_a_id, game.session_b_id}:
         raise HTTPException(status_code=403)
 
     # Determine if game ended (automatically or both users complete)
     auto_ended = (now - game.created_at) > timedelta(seconds=GAME_AUTO_END_SECS)
-    both_done = game.session_id_a_done and game.session_id_b_done
+    both_done = game.session_a_done and game.session_b_done
 
     # Determine when each player should end based on their reported start time
     session_a_secs_remaining = (
-        max(GAME_DURATION_SECS - (now - game.session_id_a_start).total_seconds(), 0)
-        if game.session_id_a_start is not None
+        max(GAME_DURATION_SECS - (now - game.session_a_start).total_seconds(), 0)
+        if game.session_a_start is not None
         else None
     )
     session_b_secs_remaining = (
-        max(GAME_DURATION_SECS - (now - game.session_id_b_start).total_seconds(), 0)
-        if game.session_id_b_start is not None
+        max(GAME_DURATION_SECS - (now - game.session_b_start).total_seconds(), 0)
+        if game.session_b_start is not None
         else None
     )
 
@@ -195,7 +195,7 @@ async def get_game(
         this_player=GetGameRespPlayer(
             seconds_remaining=(
                 session_a_secs_remaining
-                if session_id == game.session_id_a
+                if session_id == game.session_a_id
                 else session_b_secs_remaining
             ),
             points=points_for_words(this_player_words),
@@ -204,7 +204,7 @@ async def get_game(
         other_player=GetGameRespPlayer(
             seconds_remaining=(
                 session_b_secs_remaining
-                if session_id == game.session_id_a
+                if session_id == game.session_a_id
                 else session_a_secs_remaining
             ),
             points=points_for_words(other_player_words),
@@ -225,13 +225,13 @@ async def game_start(
         raise HTTPException(status_code=404)
 
     # Ensure user has access to this game
-    if session_id not in {game.session_id_a, game.session_id_b}:
+    if session_id not in {game.session_a_id, game.session_b_id}:
         raise HTTPException(status_code=403)
 
     await db.versus_game_set_player_start(
         db_conn,
         game_id,
-        "a" if session_id == game.session_id_a else "b",
+        "a" if session_id == game.session_a_id else "b",
     )
 
 
@@ -256,15 +256,15 @@ async def game_submit_words(
         raise HTTPException(status_code=404)
 
     # Ensure user has access to this game
-    if session_id not in {game.session_id_a, game.session_id_b}:
+    if session_id not in {game.session_a_id, game.session_b_id}:
         raise HTTPException(status_code=403)
 
     # Determine if we're allowed to submit words
     auto_ended = (datetime.now() - game.created_at) > timedelta(
         seconds=GAME_AUTO_END_SECS
     )
-    us_done = (session_id == game.session_id_a and game.session_id_a_done) or (
-        session_id == game.session_id_b and game.session_id_b_done
+    us_done = (
+        game.session_a_done if session_id == game.session_a_id else game.session_b_done
     )
     if auto_ended or us_done:
         raise HTTPException(status_code=400, detail="Submissions no longer accepted")
@@ -302,12 +302,12 @@ async def game_set_player_done(
         raise HTTPException(status_code=404)
 
     # Ensure user has access to this game
-    if session_id not in {game.session_id_a, game.session_id_b}:
+    if session_id not in {game.session_a_id, game.session_b_id}:
         raise HTTPException(status_code=403)
 
     # Set the given player to be done
     await db.versus_game_set_player_done(
         db_conn,
         game_id,
-        "a" if session_id == game.session_id_a else "b",
+        "a" if session_id == game.session_a_id else "b",
     )

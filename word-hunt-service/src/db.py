@@ -136,14 +136,14 @@ async def versus_queue_match(
 async def versus_game_create(
     db_conn: AsyncConnection,
     game_id: UUID,
-    session_id_a: UUID,
-    session_id_b: UUID,
+    session_a_id: UUID,
+    session_b_id: UUID,
     grid: Grid,
 ) -> VersusGame:
     """Construct a new versus game."""
 
     query = """
-    INSERT INTO versus_games (id, session_id_a, session_id_b, grid)
+    INSERT INTO versus_games (id, session_a_id, session_b_id, grid)
     VALUES (%s, %s, %s, %s)
     RETURNING *
     """
@@ -152,8 +152,8 @@ async def versus_game_create(
             query,
             (
                 game_id,
-                session_id_a,
-                session_id_b,
+                session_a_id,
+                session_b_id,
                 Jsonb(grid),
             ),
         )
@@ -182,9 +182,9 @@ async def versus_game_set_player_start(
 
     query = f"""
     UPDATE versus_games
-    SET session_id_{player}_start = NOW()
+    SET session_{player}_start = NOW()
     WHERE id = %s
-        AND session_id_{player}_start IS NULL
+        AND session_{player}_start IS NULL
     """  # noqa: S608
 
     await db_conn.execute(query, (game_id,))
@@ -201,7 +201,7 @@ async def versus_game_set_player_done(
 
     query = f"""
     UPDATE versus_games
-    SET session_id_{player}_done = TRUE
+    SET session_{player}_done = TRUE
     WHERE id = %s
     """  # noqa: S608
 
