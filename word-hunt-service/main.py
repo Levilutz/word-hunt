@@ -78,6 +78,16 @@ async def ping() -> str:
     return "OK"
 
 
+@app.get("/cookie0")
+async def cookie0(response: Response) -> None:
+    response.set_cookie(
+        key="session_id",
+        value="00000000-0000-4000-8000-000000000000",
+        httponly=True,
+        secure=ENVIRONMENT != "dev",
+    )
+
+
 class PostMatchResp(BaseModel):
     game_id: UUID | None
 

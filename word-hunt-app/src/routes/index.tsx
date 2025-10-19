@@ -12,15 +12,16 @@ function App() {
     <>
       <Header />
       <h1>Word Hunt</h1>
-      <button onClick={() => navigate({ to: "/match" })}>Start</button>
+      <button type="button" onClick={() => navigate({ to: "/match" })}>
+        Start
+      </button>
       <button
+        type="button"
         onClick={() => {
-          client.pingPingGet().then((res) => {
-            console.log(res);
-          });
+          client.cookie0Cookie0Get();
         }}
       >
-        Click me!
+        Set Cookie
       </button>
     </>
   );

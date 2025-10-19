@@ -50,6 +50,39 @@ export interface GetGameGameGameIdGetRequest {
 export class DefaultApi extends runtime.BaseAPI {
 
     /**
+     * Cookie0
+     */
+    async cookie0Cookie0GetRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/cookie0`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Cookie0
+     */
+    async cookie0Cookie0Get(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.cookie0Cookie0GetRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Game Set Player Done
      */
     async gameSetPlayerDoneGameGameIdDonePostRaw(requestParameters: GameSetPlayerDoneGameGameIdDonePostRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
