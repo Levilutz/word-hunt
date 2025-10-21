@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from src import utils
 from src.constants import GAME_AUTO_END_SECS, GAME_DURATION_SECS, POINTS_BY_LEN
 from src.core import Grid, Point
 
@@ -97,3 +98,12 @@ class VersusGame:
             == self.session_b.play_secs_remaining()
             == 0
         )
+
+    def extract_word(self, path: list[Point]) -> str | None:
+        out = ""
+        for point in path:
+            item = utils.list_get(utils.list_get(self.grid, point.y), point.x)
+            if item is None:
+                return None
+            out += item
+        return out or None

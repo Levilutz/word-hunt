@@ -3,7 +3,6 @@ import random
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -14,9 +13,7 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from src import db
-from src.constants import GAME_AUTO_END_SECS
-from src.core import Grid, Point, extract_word
-from src.data_models import VersusGameSubmittedWord
+from src.core import Grid, Point
 from src.grid_templates import GRID_TEMPLATES
 from src.repositories.versus_game import VersusGameRepository
 from src.utils import random_grid
@@ -98,11 +95,12 @@ async def match(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> PostMatchResp:
+    versus_game_repository = VersusGameRepository(db_conn)
+
     # First, try to match with an existing player
     match_result = await db.versus_queue_match(db_conn, session_id)
     if isinstance(match_result, db.VersusQueueMatched):
         # We got a match, it's our responsibility to actually construct the game
-        versus_game_repository = VersusGameRepository(db_conn)
         await versus_game_repository.create_versus_game(
             match_result.game_id,
             match_result.other_session_id,
@@ -122,9 +120,9 @@ async def match(
 
     # Poll until game exists
     for _ in range(1000):
-        result = await db.versus_game_get(db_conn, check_result.game_id)
+        result = await versus_game_repository.get_versus_game(check_result.game_id)
         if result is not None:
-            return PostMatchResp(game_id=result.id)
+            return PostMatchResp(game_id=result.game_id)
         await sleep(0.1)
 
     # Poll timeout
@@ -154,8 +152,6 @@ async def get_game(
     # Construct the Game domain model
     versus_game_repository = VersusGameRepository(db_conn)
     game = await versus_game_repository.get_versus_game(game_id)
-
-    # Get the game, 404 if not present
     if game is None:
         raise HTTPException(status_code=404)
 
@@ -188,20 +184,18 @@ async def game_start(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> None:
-    # Pull the game
-    game = await db.versus_game_get(db_conn, game_id)
+    # Construct the Game domain model
+    versus_game_repository = VersusGameRepository(db_conn)
+    game = await versus_game_repository.get_versus_game(game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
-    # Ensure user has access to this game
-    if session_id not in {game.session_a_id, game.session_b_id}:
+    # Ensure this session is a participant in the game
+    sessions = game.get_oriented_sessions(session_id)
+    if sessions is None:
         raise HTTPException(status_code=403)
 
-    await db.versus_game_set_player_start(
-        db_conn,
-        game_id,
-        "a" if session_id == game.session_a_id else "b",
-    )
+    await versus_game_repository.update_versus_game_player_start(game_id, session_id)
 
 
 class SubmitWordsReq(BaseModel):
@@ -219,42 +213,34 @@ async def game_submit_words(
     if len(req.paths) == 0:
         raise HTTPException(status_code=400, detail="No paths provided")
 
-    # Pull the game
-    game = await db.versus_game_get(db_conn, game_id)
+    # Construct the Game domain model
+    versus_game_repository = VersusGameRepository(db_conn)
+    game = await versus_game_repository.get_versus_game(game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
-    # Ensure user has access to this game
-    if session_id not in {game.session_a_id, game.session_b_id}:
+    # Ensure this session is a participant in the game
+    sessions = game.get_oriented_sessions(session_id)
+    if sessions is None:
         raise HTTPException(status_code=403)
 
     # Determine if we're allowed to submit words
-    auto_ended = (datetime.now() - game.created_at).total_seconds() > GAME_AUTO_END_SECS
-    us_done = (
-        game.session_a_done if session_id == game.session_a_id else game.session_b_done
-    )
-    if auto_ended or us_done:
+    if not game.session_may_submit(session_id):
         raise HTTPException(status_code=400, detail="Submissions no longer accepted")
 
-    # Build db input and validate as we go
-    submitted_words: list[VersusGameSubmittedWord] = []
+    # Extract words and validate
+    validated_words: list[tuple[str, list[Point]]] = []
     for i, path in enumerate(req.paths):
-        word = extract_word(game.grid, path)
+        word = game.extract_word(path)
         if word is None:
             raise HTTPException(status_code=400, detail=f"Path {i} invalid")
         # TODO: Validate word in dictionary
-        submitted_words.append(
-            VersusGameSubmittedWord(
-                id=uuid4(),
-                game_id=game_id,
-                session_id=session_id,
-                tile_path=path,
-                word=word,
-            )
-        )
+        validated_words.append((word, path))
 
     # Insert the words into the db
-    await db.versus_game_submit_words(db_conn, submitted_words)
+    await versus_game_repository.update_versus_game_submit_words(
+        game_id, session_id, validated_words
+    )
 
 
 @app.post("/game/{game_id}/done")
@@ -263,18 +249,15 @@ async def game_set_player_done(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> None:
-    # Pull the game
-    game = await db.versus_game_get(db_conn, game_id)
+    # Construct the Game domain model
+    versus_game_repository = VersusGameRepository(db_conn)
+    game = await versus_game_repository.get_versus_game(game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
-    # Ensure user has access to this game
-    if session_id not in {game.session_a_id, game.session_b_id}:
+    # Ensure this session is a participant in the game
+    sessions = game.get_oriented_sessions(session_id)
+    if sessions is None:
         raise HTTPException(status_code=403)
 
-    # Set the given player to be done
-    await db.versus_game_set_player_done(
-        db_conn,
-        game_id,
-        "a" if session_id == game.session_a_id else "b",
-    )
+    await versus_game_repository.update_versus_game_player_done(game_id, session_id)

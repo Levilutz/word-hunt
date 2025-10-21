@@ -1,18 +1,13 @@
 import time
 from asyncio import sleep
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
 from psycopg.rows import class_row
-from psycopg.types.json import Jsonb
 
-from src.core import Grid
 from src.data_models import (
-    VersusGame,
     VersusGamesMatchQueueItem,
-    VersusGameSubmittedWord,
 )
 
 
@@ -131,111 +126,3 @@ async def versus_queue_match(
         if result is None:
             return VersusQueueNoMatchYet()
         return VersusQueueMatched(game_id=game_id, other_session_id=result.session_id)
-
-
-async def versus_game_create(
-    db_conn: AsyncConnection,
-    game_id: UUID,
-    session_a_id: UUID,
-    session_b_id: UUID,
-    grid: Grid,
-) -> VersusGame:
-    """Construct a new versus game."""
-
-    query = """
-    INSERT INTO versus_games (id, session_a_id, session_b_id, grid)
-    VALUES (%s, %s, %s, %s)
-    RETURNING *
-    """
-    async with db_conn.cursor(row_factory=class_row(VersusGame)) as cur:
-        await cur.execute(
-            query,
-            (
-                game_id,
-                session_a_id,
-                session_b_id,
-                Jsonb(grid),
-            ),
-        )
-        result = await cur.fetchone()
-        if result is None:
-            raise ValueError("Expected game to exist after insert")
-        return result
-
-
-async def versus_game_get(db_conn: AsyncConnection, game_id: UUID) -> VersusGame | None:
-    """Get a versus game."""
-
-    async with db_conn.cursor(row_factory=class_row(VersusGame)) as cur:
-        await cur.execute("SELECT * FROM versus_games WHERE id = %s", (game_id,))
-        return await cur.fetchone()
-
-
-async def versus_game_set_player_start(
-    db_conn: AsyncConnection, game_id: UUID, player: Literal["a", "b"]
-):
-    """Set the given player to be done submitting words."""
-
-    # Just to be safe against injection
-    if player != "a" and player != "b":  # noqa: PLR1714
-        raise ValueError(f"Invalid player id: {player}")
-
-    query = f"""
-    UPDATE versus_games
-    SET session_{player}_start = NOW()
-    WHERE id = %s
-        AND session_{player}_start IS NULL
-    """  # noqa: S608
-
-    await db_conn.execute(query, (game_id,))
-
-
-async def versus_game_set_player_done(
-    db_conn: AsyncConnection, game_id: UUID, player: Literal["a", "b"]
-):
-    """Set the given player to be done submitting words."""
-
-    # Just to be safe against injection
-    if player != "a" and player != "b":  # noqa: PLR1714
-        raise ValueError(f"Invalid player id: {player}")
-
-    query = f"""
-    UPDATE versus_games
-    SET session_{player}_done = TRUE
-    WHERE id = %s
-    """  # noqa: S608
-
-    await db_conn.execute(query, (game_id,))
-
-
-async def versus_game_submit_words(
-    db_conn: AsyncConnection, submitted_words: list[VersusGameSubmittedWord]
-) -> None:
-    query = """
-    INSERT INTO versus_game_submitted_words (id, game_id, session_id, tile_path, word)
-    VALUES (%s, %s, %s, %s, %s)
-    """
-    async with db_conn.cursor() as cur:
-        await cur.executemany(
-            query,
-            [
-                (
-                    submitted_word.id,
-                    submitted_word.game_id,
-                    submitted_word.session_id,
-                    Jsonb([point.model_dump() for point in submitted_word.tile_path]),
-                    submitted_word.word,
-                )
-                for submitted_word in submitted_words
-            ],
-        )
-
-
-async def versus_game_get_words(
-    db_conn: AsyncConnection, game_id: UUID
-) -> list[VersusGameSubmittedWord]:
-    async with db_conn.cursor(row_factory=class_row(VersusGameSubmittedWord)) as cur:
-        await cur.execute(
-            "SELECT * FROM versus_game_submitted_words WHERE game_id = %s", (game_id,)
-        )
-        return await cur.fetchall()
