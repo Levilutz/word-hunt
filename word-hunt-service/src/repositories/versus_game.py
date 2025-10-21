@@ -1,13 +1,12 @@
 import asyncio
-from typing import Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from psycopg import AsyncConnection
 from psycopg.rows import class_row
 from psycopg.types.json import Jsonb
 
 from src import data_models
-from src.core import Grid
+from src.core import Grid, Point
 from src.domain.versus_game import (
     VersusGame,
     VersusGameSession,
@@ -44,6 +43,68 @@ class VersusGameRepository:
             return None
 
         return self._build_versus_game(db_game, db_submitted_words)
+
+    async def update_versus_game_player_start(
+        self, game_id: UUID, session_id: UUID
+    ) -> None:
+        """Set the given player to be started."""
+        query = """
+        UPDATE versus_games
+        SET
+            session_a_start = CASE
+                WHEN session_a_id = %s AND session_a_start IS NULL THEN NOW()
+                ELSE session_a_start,
+            session_b_start = CASE
+                WHEN session_b_id = %s AND session_b_start IS NULL THEN NOW()
+                ELSE session_b_start
+        WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
+        """
+        await self._db_conn.execute(
+            query,
+            (session_id, session_id, game_id, session_id, session_id),
+        )
+
+    async def update_versus_game_player_done(
+        self, game_id: UUID, session_id: UUID
+    ) -> None:
+        """Set the given player to be done submitting words."""
+        query = """
+        UPDATE versus_games
+        SET
+            session_a_done = CASE
+                WHEN session_a_id = %s THEN TRUE
+                ELSE session_a_done,
+            session_b_done = CASE
+                WHEN session_b_id = %s THEN TRUE
+                ELSE session_b_done
+        WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
+        """
+        await self._db_conn.execute(
+            query,
+            (session_id, session_id, game_id, session_id, session_id),
+        )
+
+    async def update_versus_game_submit_words(
+        self,
+        game_id: UUID,
+        session_id: UUID,
+        validated_words: list[tuple[str, list[Point]]],
+    ) -> None:
+        """Given a set of _validated_ words, insert them for this session id.
+
+        Duplicates are OK, and will be hidden at domain-model-construction time.
+        """
+        submitted_words = [
+            data_models.VersusGameSubmittedWord(
+                id=uuid4(),
+                game_id=game_id,
+                session_id=session_id,
+                tile_path=path,
+                word=word,
+            )
+            for (word, path) in validated_words
+        ]
+        await self._db_versus_game_submitted_words_insert(submitted_words)
 
     def _build_versus_game(
         self,
@@ -130,41 +191,6 @@ class VersusGameRepository:
         ) as cur:
             await cur.execute("SELECT * FROM versus_games WHERE id = %s", (game_id,))
             return await cur.fetchone()
-
-    async def _db_versus_game_set_player_start(
-        self, game_id: UUID, player: Literal["a", "b"]
-    ) -> None:
-        """Set the given player to be done submitting words."""
-
-        # Just to be safe against injection
-        if player != "a" and player != "b":  # noqa: PLR1714
-            raise ValueError(f"Invalid player id: {player}")
-
-        query = f"""
-        UPDATE versus_games
-        SET session_{player}_start = NOW()
-        WHERE id = %s
-            AND session_{player}_start IS NULL
-        """  # noqa: S608
-
-        await self._db_conn.execute(query, (game_id,))
-
-    async def _db_versus_game_set_player_done(
-        self, game_id: UUID, player: Literal["a", "b"]
-    ):
-        """Set the given player to be done submitting words."""
-
-        # Just to be safe against injection
-        if player != "a" and player != "b":  # noqa: PLR1714
-            raise ValueError(f"Invalid player id: {player}")
-
-        query = f"""
-        UPDATE versus_games
-        SET session_{player}_done = TRUE
-        WHERE id = %s
-        """  # noqa: S608
-
-        await self._db_conn.execute(query, (game_id,))
 
     async def _db_versus_game_submitted_words_list(
         self, game_id: UUID
