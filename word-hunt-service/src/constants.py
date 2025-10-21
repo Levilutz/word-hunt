@@ -1,3 +1,7 @@
+from typing import Literal
+
+from src.core import GridTemplate
+
 GAME_DURATION_SECS = 80
 """How long a game is."""
 
@@ -13,3 +17,35 @@ POINTS_BY_LEN = {
     8: 2200,
 }
 """How many points are awarded for words of the given length."""
+
+GridTemplateName = Literal["standard", "o", "x", "big"]
+
+GRID_TEMPLATES: dict[GridTemplateName, GridTemplate] = {
+    "standard": [
+        [True, True, True, True],
+        [True, True, True, True],
+        [True, True, True, True],
+        [True, True, True, True],
+    ],
+    "o": [
+        [False, True, True, True, False],
+        [True, True, True, True, True],
+        [True, True, False, True, True],
+        [True, True, True, True, True],
+        [False, True, True, True, False],
+    ],
+    "x": [
+        [True, True, False, True, True],
+        [True, True, True, True, True],
+        [False, True, True, True, False],
+        [True, True, True, True, True],
+        [True, True, False, True, True],
+    ],
+    "big": [
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+    ],
+}

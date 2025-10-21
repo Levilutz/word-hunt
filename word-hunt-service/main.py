@@ -13,8 +13,8 @@ from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
+from src.constants import GRID_TEMPLATES
 from src.core import Grid, Point
-from src.grid_templates import GRID_TEMPLATES
 from src.repositories.versus_game import VersusGameRepository
 from src.repositories.versus_match_queue import VersusMatchQueueRepository
 from src.utils import random_grid
