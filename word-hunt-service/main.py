@@ -1,5 +1,4 @@
 import os
-import random
 import time
 from asyncio import sleep
 from collections.abc import AsyncGenerator
@@ -13,9 +12,13 @@ from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
-from src.constants import GRID_TEMPLATES
-from src.core import Grid, Point
-from src.utils import random_grid
+from src.versus_game.domain import (
+    Grid,
+    random_template_and_grid,
+)
+from src.versus_game.domain import (
+    Point as VersusGamePoint,
+)
 from src.versus_game.repository import VersusGameRepository
 from src.versus_match_queue.repository import VersusMatchQueueRepository
 
@@ -72,6 +75,11 @@ if ENVIRONMENT == "dev":
     )
 
 
+class Point(BaseModel):
+    x: int
+    y: int
+
+
 @app.get("/ping")
 async def ping() -> str:
     return "OK"
@@ -117,7 +125,7 @@ async def match(
             match.game_id,
             match.other_session_id,
             session_id,
-            random_grid(random.choice(list(GRID_TEMPLATES.values()))),  # noqa: S311
+            random_template_and_grid(),
         )
         return PostMatchResp(game_id=match.game_id)
 
@@ -234,7 +242,9 @@ async def game_submit_words(
     # Extract words and validate
     validated_words: list[tuple[str, list[Point]]] = []
     for i, path in enumerate(req.paths):
-        word = game.extract_word(path)
+        word = game.extract_word(
+            [VersusGamePoint(x=point.x, y=point.y) for point in path]
+        )
         if word is None:
             raise HTTPException(status_code=400, detail=f"Path {i} invalid")
         # TODO: Validate word in dictionary

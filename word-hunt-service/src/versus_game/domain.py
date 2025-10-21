@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from src import utils
 from src.constants import GAME_AUTO_END_SECS, GAME_DURATION_SECS, POINTS_BY_LEN
-from src.core import Grid, Point
+from src.versus_game.constants import GRID_TEMPLATES
+
+Grid = list[list[str | None]]
+GridTemplate = list[list[bool]]
+
+
+@dataclass(frozen=True)
+class Point:
+    x: int
+    y: int
 
 
 @dataclass(frozen=True)
@@ -107,3 +117,13 @@ class VersusGame:
                 return None
             out += item
         return out or None
+
+
+def random_grid(template: GridTemplate) -> Grid:
+    return [
+        [utils.random_alpha() if cell else None for cell in row] for row in template
+    ]
+
+
+def random_template_and_grid() -> Grid:
+    return random_grid(random.choice(list(GRID_TEMPLATES.values())))  # noqa: S311
