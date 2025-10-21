@@ -6,8 +6,12 @@ from datetime import datetime
 from uuid import UUID
 
 from src import utils
-from src.constants import GAME_AUTO_END_SECS, GAME_DURATION_SECS, POINTS_BY_LEN
-from src.versus_game.constants import GRID_TEMPLATES
+from src.versus_game.constants import (
+    GAME_AUTO_END_SECS,
+    GAME_DURATION_SECS,
+    GRID_TEMPLATES,
+    POINTS_BY_LEN,
+)
 
 Grid = list[list[str | None]]
 GridTemplate = list[list[bool]]
