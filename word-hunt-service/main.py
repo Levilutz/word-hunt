@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -12,10 +13,10 @@ from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
-from src import db
 from src.core import Grid, Point
 from src.grid_templates import GRID_TEMPLATES
 from src.repositories.versus_game import VersusGameRepository
+from src.repositories.versus_match_queue import VersusMatchQueueRepository
 from src.utils import random_grid
 
 ENVIRONMENT = os.getenv("ENV", "prod")
@@ -95,32 +96,34 @@ async def match(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> PostMatchResp:
+    # To limit polling later in fn
+    start_time = time.time()
+    max_total_request_time = 50
+
+    # Construct repositories
+    versus_match_queue_repository = VersusMatchQueueRepository(db_conn)
     versus_game_repository = VersusGameRepository(db_conn)
 
-    # First, try to match with an existing player
-    match_result = await db.versus_queue_match(db_conn, session_id)
-    if isinstance(match_result, db.VersusQueueMatched):
-        # We got a match, it's our responsibility to actually construct the game
+    # Try to get a match
+    match = await versus_match_queue_repository.match(session_id)
+
+    # We did not get a match
+    if match is None:
+        return PostMatchResp(game_id=None)
+
+    # If it's our responsibility to construct the game, construct and return
+    if match.must_create_game:
         await versus_game_repository.create_versus_game(
-            match_result.game_id,
-            match_result.other_session_id,
+            match.game_id,
+            match.other_session_id,
             session_id,
             random_grid(random.choice(list(GRID_TEMPLATES.values()))),  # noqa: S311
         )
+        return PostMatchResp(game_id=match.game_id)
 
-        return PostMatchResp(game_id=match_result.game_id)
-
-    # We didn't match, join the queue
-    queue_entry_id = await db.versus_queue_join(db_conn, session_id)
-
-    # Poll until we're assigned a match, or exit if expired
-    check_result = await db.versus_queue_check_poll(db_conn, queue_entry_id)
-    if isinstance(check_result, db.VersusQueueExpired):
-        return PostMatchResp(game_id=None)
-
-    # Poll until game exists
-    for _ in range(1000):
-        result = await versus_game_repository.get_versus_game(check_result.game_id)
+    # It's the match partner's responsibility to construct the game, poll until exists
+    while (time.time() - start_time) < max_total_request_time:
+        result = await versus_game_repository.get_versus_game(match.game_id)
         if result is not None:
             return PostMatchResp(game_id=result.game_id)
         await sleep(0.1)
