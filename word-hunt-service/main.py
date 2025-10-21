@@ -14,10 +14,11 @@ from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from src import db
-from src.constants import GAME_AUTO_END_SECS, GAME_DURATION_SECS
-from src.core import Grid, Point, extract_word, points_for_words
+from src.constants import GAME_AUTO_END_SECS
+from src.core import Grid, Point, extract_word
 from src.data_models import VersusGameSubmittedWord
 from src.grid_templates import GRID_TEMPLATES
+from src.repositories.versus_game import VersusGameRepository
 from src.utils import random_grid
 
 ENVIRONMENT = os.getenv("ENV", "prod")
@@ -150,65 +151,33 @@ async def get_game(
     session_id: Annotated[UUID, Depends(get_session_id)],
     db_conn: Annotated[AsyncConnection, Depends(get_db_conn)],
 ) -> GetGameResp:
-    # Consistent value over fn execution
-    now = datetime.now()
+    # Construct the Game domain model
+    versus_game_repository = VersusGameRepository(db_conn)
+    game = await versus_game_repository.get_versus_game(game_id)
 
     # Get the game, 404 if not present
-    game = await db.versus_game_get(db_conn, game_id)
     if game is None:
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    if session_id not in {game.session_a_id, game.session_b_id}:
+    sessions = game.get_oriented_sessions(session_id)
+    if sessions is None:
         raise HTTPException(status_code=403)
-
-    # Determine if game ended (automatically or both users complete)
-    auto_ended = (now - game.created_at).total_seconds() > GAME_AUTO_END_SECS
-    both_done = game.session_a_done and game.session_b_done
-
-    # Determine when each player should end based on their reported start time
-    session_a_secs_remaining = (
-        max(GAME_DURATION_SECS - (now - game.session_a_start).total_seconds(), 0)
-        if game.session_a_start is not None
-        else None
-    )
-    session_b_secs_remaining = (
-        max(GAME_DURATION_SECS - (now - game.session_b_start).total_seconds(), 0)
-        if game.session_b_start is not None
-        else None
-    )
-
-    # Pull and categorize the game's submitted words
-    game_words = await db.versus_game_get_words(db_conn, game.id)
-    this_player_words = list(
-        {gw.word for gw in game_words if gw.session_id == session_id}
-    )
-    other_player_words = list(
-        {gw.word for gw in game_words if gw.session_id != session_id}
-    )
 
     # Build resp
     return GetGameResp(
-        game_id=game.id,
+        game_id=game.game_id,
         grid=game.grid,
-        ended=auto_ended or both_done,
+        ended=game.ended(),
         this_player=GetGameRespPlayer(
-            seconds_remaining=(
-                session_a_secs_remaining
-                if session_id == game.session_a_id
-                else session_b_secs_remaining
-            ),
-            points=points_for_words(this_player_words),
-            words=this_player_words,
+            seconds_remaining=sessions.this_session.play_secs_remaining(),
+            points=sessions.this_session.points(),
+            words=[word.word for word in sessions.this_session.submitted_words],
         ),
         other_player=GetGameRespPlayer(
-            seconds_remaining=(
-                session_b_secs_remaining
-                if session_id == game.session_a_id
-                else session_a_secs_remaining
-            ),
-            points=points_for_words(other_player_words),
-            words=other_player_words,
+            seconds_remaining=sessions.other_session.play_secs_remaining(),
+            points=sessions.other_session.points(),
+            words=[word.word for word in sessions.other_session.submitted_words],
         ),
     )
 
