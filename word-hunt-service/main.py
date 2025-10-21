@@ -3,7 +3,7 @@ import random
 from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -163,7 +163,7 @@ async def get_game(
         raise HTTPException(status_code=403)
 
     # Determine if game ended (automatically or both users complete)
-    auto_ended = (now - game.created_at) > timedelta(seconds=GAME_AUTO_END_SECS)
+    auto_ended = (now - game.created_at).total_seconds() > GAME_AUTO_END_SECS
     both_done = game.session_a_done and game.session_b_done
 
     # Determine when each player should end based on their reported start time
@@ -260,9 +260,7 @@ async def game_submit_words(
         raise HTTPException(status_code=403)
 
     # Determine if we're allowed to submit words
-    auto_ended = (datetime.now() - game.created_at) > timedelta(
-        seconds=GAME_AUTO_END_SECS
-    )
+    auto_ended = (datetime.now() - game.created_at).total_seconds() > GAME_AUTO_END_SECS
     us_done = (
         game.session_a_done if session_id == game.session_a_id else game.session_b_done
     )
