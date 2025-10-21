@@ -102,8 +102,8 @@ async def match(
     match_result = await db.versus_queue_match(db_conn, session_id)
     if isinstance(match_result, db.VersusQueueMatched):
         # We got a match, it's our responsibility to actually construct the game
-        await db.versus_game_create(
-            db_conn,
+        versus_game_repository = VersusGameRepository(db_conn)
+        await versus_game_repository.create_versus_game(
             match_result.game_id,
             match_result.other_session_id,
             session_id,

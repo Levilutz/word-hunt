@@ -21,6 +21,18 @@ class VersusGameRepository:
     def __init__(self, db_conn: AsyncConnection) -> None:
         self._db_conn = db_conn
 
+    async def create_versus_game(
+        self,
+        game_id: UUID,
+        session_a_id: UUID,
+        session_b_id: UUID,
+        grid: Grid,
+    ) -> VersusGame:
+        db_game = await self._db_versus_game_construct(
+            game_id, session_a_id, session_b_id, grid
+        )
+        return self._build_versus_game(db_game, [])
+
     async def get_versus_game(self, game_id: UUID) -> VersusGame | None:
         """Get a versus game from the DB."""
 
@@ -31,8 +43,18 @@ class VersusGameRepository:
         if db_game is None:
             return None
 
+        return self._build_versus_game(db_game, db_submitted_words)
+
+    def _build_versus_game(
+        self,
+        db_game: data_models.VersusGame,
+        db_submitted_words: list[data_models.VersusGameSubmittedWord],
+    ) -> VersusGame:
+        """Given the data models for a versus game and a set of submitted words, build
+        the domain model.
+        """
         return VersusGame(
-            game_id=game_id,
+            game_id=db_game.id,
             created_at=db_game.created_at,
             session_a=VersusGameSession(
                 session_id=db_game.session_a_id,
