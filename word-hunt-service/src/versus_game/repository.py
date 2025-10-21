@@ -5,13 +5,8 @@ from psycopg import AsyncConnection
 from psycopg.rows import class_row
 from psycopg.types.json import Jsonb
 
-from src import data_models
 from src.core import Grid, Point
-from src.domain.versus_game import (
-    VersusGame,
-    VersusGameSession,
-    VersusGameSubmittedWord,
-)
+from src.versus_game import data_models, domain
 
 
 class VersusGameRepository:
@@ -26,13 +21,13 @@ class VersusGameRepository:
         session_a_id: UUID,
         session_b_id: UUID,
         grid: Grid,
-    ) -> VersusGame:
+    ) -> domain.VersusGame:
         db_game = await self._db_versus_game_construct(
             game_id, session_a_id, session_b_id, grid
         )
         return self._build_versus_game(db_game, [])
 
-    async def get_versus_game(self, game_id: UUID) -> VersusGame | None:
+    async def get_versus_game(self, game_id: UUID) -> domain.VersusGame | None:
         """Get a versus game from the DB."""
 
         db_game, db_submitted_words = await asyncio.gather(
@@ -110,20 +105,20 @@ class VersusGameRepository:
         self,
         db_game: data_models.VersusGame,
         db_submitted_words: list[data_models.VersusGameSubmittedWord],
-    ) -> VersusGame:
+    ) -> domain.VersusGame:
         """Given the data models for a versus game and a set of submitted words, build
         the domain model.
         """
-        return VersusGame(
+        return domain.VersusGame(
             game_id=db_game.id,
             created_at=db_game.created_at,
-            session_a=VersusGameSession(
+            session_a=domain.VersusGameSession(
                 session_id=db_game.session_a_id,
                 start=db_game.session_a_start,
                 done=db_game.session_a_done,
-                submitted_words=VersusGameSubmittedWord.dedup(
+                submitted_words=domain.VersusGameSubmittedWord.dedup(
                     [
-                        VersusGameSubmittedWord(
+                        domain.VersusGameSubmittedWord(
                             submitted_word_id=db_word.id,
                             tile_path=db_word.tile_path,
                             word=db_word.word,
@@ -133,13 +128,13 @@ class VersusGameRepository:
                     ]
                 ),
             ),
-            session_b=VersusGameSession(
+            session_b=domain.VersusGameSession(
                 session_id=db_game.session_b_id,
                 start=db_game.session_b_start,
                 done=db_game.session_b_done,
-                submitted_words=VersusGameSubmittedWord.dedup(
+                submitted_words=domain.VersusGameSubmittedWord.dedup(
                     [
-                        VersusGameSubmittedWord(
+                        domain.VersusGameSubmittedWord(
                             submitted_word_id=db_word.id,
                             tile_path=db_word.tile_path,
                             word=db_word.word,

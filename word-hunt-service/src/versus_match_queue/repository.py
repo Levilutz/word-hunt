@@ -5,8 +5,7 @@ from uuid import UUID, uuid4
 from psycopg import AsyncConnection
 from psycopg.rows import class_row
 
-from src import data_models
-from src.domain.versus_match_queue import VersusQueueMatch
+from src.versus_match_queue import data_models, domain
 
 
 class VersusMatchQueueRepository:
@@ -20,7 +19,7 @@ class VersusMatchQueueRepository:
         session_id: UUID,
         poll_interval: float = 0.1,
         limit_poll_time: float = 30.0,
-    ) -> VersusQueueMatch | None:
+    ) -> domain.VersusQueueMatch | None:
         """Attempt to find a match for a versus game."""
 
         # First, try to match with an existing session on the queue
@@ -28,7 +27,7 @@ class VersusMatchQueueRepository:
         if match_result is not None:
             # We received a match, it's caller's responsibility to construct the game
             game_id, other_session_id = match_result
-            return VersusQueueMatch(
+            return domain.VersusQueueMatch(
                 game_id=game_id,
                 other_session_id=other_session_id,
                 must_create_game=True,
@@ -44,7 +43,7 @@ class VersusMatchQueueRepository:
             if check_result is not None:
                 # We were given a match, the partner will construct the game
                 game_id, other_session_id = check_result
-                return VersusQueueMatch(
+                return domain.VersusQueueMatch(
                     game_id=game_id,
                     other_session_id=other_session_id,
                     must_create_game=False,

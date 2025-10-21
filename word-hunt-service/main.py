@@ -15,9 +15,9 @@ from pydantic import BaseModel
 
 from src.constants import GRID_TEMPLATES
 from src.core import Grid, Point
-from src.repositories.versus_game import VersusGameRepository
-from src.repositories.versus_match_queue import VersusMatchQueueRepository
 from src.utils import random_grid
+from src.versus_game.repository import VersusGameRepository
+from src.versus_match_queue.repository import VersusMatchQueueRepository
 
 ENVIRONMENT = os.getenv("ENV", "prod")
 POSTGRES_URL = os.getenv("POSTGRES_URL", "")
