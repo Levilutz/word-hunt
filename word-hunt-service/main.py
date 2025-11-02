@@ -240,11 +240,10 @@ async def game_submit_words(
         raise HTTPException(status_code=400, detail="Submissions no longer accepted")
 
     # Extract words and validate
-    validated_words: list[tuple[str, list[Point]]] = []
-    for i, path in enumerate(req.paths):
-        word = game.extract_word(
-            [VersusGamePoint(x=point.x, y=point.y) for point in path]
-        )
+    validated_words: list[tuple[str, list[VersusGamePoint]]] = []
+    for i, req_path in enumerate(req.paths):
+        path = [VersusGamePoint(x=point.x, y=point.y) for point in req_path]
+        word = game.extract_word(path)
         if word is None:
             raise HTTPException(status_code=400, detail=f"Path {i} invalid")
         # TODO: Validate word in dictionary

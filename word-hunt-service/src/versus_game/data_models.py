@@ -3,7 +3,12 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.core import Grid, Point
+Grid = list[list[str | None]]
+
+
+class Point(BaseModel):
+    x: int
+    y: int
 
 
 class VersusGamesMatchQueueItem(BaseModel):

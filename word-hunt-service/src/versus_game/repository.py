@@ -5,7 +5,6 @@ from psycopg import AsyncConnection
 from psycopg.rows import class_row
 from psycopg.types.json import Jsonb
 
-from src.core import Grid, Point
 from src.versus_game import data_models, domain
 
 
@@ -20,7 +19,7 @@ class VersusGameRepository:
         game_id: UUID,
         session_a_id: UUID,
         session_b_id: UUID,
-        grid: Grid,
+        grid: domain.Grid,
     ) -> domain.VersusGame:
         db_game = await self._db_versus_game_construct(
             game_id, session_a_id, session_b_id, grid
@@ -83,7 +82,7 @@ class VersusGameRepository:
         self,
         game_id: UUID,
         session_id: UUID,
-        validated_words: list[tuple[str, list[Point]]],
+        validated_words: list[tuple[str, list[domain.Point]]],
     ) -> None:
         """Given a set of _validated_ words, insert them for this session id.
 
@@ -94,7 +93,7 @@ class VersusGameRepository:
                 id=uuid4(),
                 game_id=game_id,
                 session_id=session_id,
-                tile_path=path,
+                tile_path=[data_models.Point(x=pt.x, y=pt.y) for pt in path],
                 word=word,
             )
             for (word, path) in validated_words
@@ -120,7 +119,9 @@ class VersusGameRepository:
                     [
                         domain.VersusGameSubmittedWord(
                             submitted_word_id=db_word.id,
-                            tile_path=db_word.tile_path,
+                            tile_path=[
+                                domain.Point(x=pt.x, y=pt.y) for pt in db_word.tile_path
+                            ],
                             word=db_word.word,
                         )
                         for db_word in db_submitted_words
@@ -136,7 +137,9 @@ class VersusGameRepository:
                     [
                         domain.VersusGameSubmittedWord(
                             submitted_word_id=db_word.id,
-                            tile_path=db_word.tile_path,
+                            tile_path=[
+                                domain.Point(x=pt.x, y=pt.y) for pt in db_word.tile_path
+                            ],
                             word=db_word.word,
                         )
                         for db_word in db_submitted_words
@@ -152,7 +155,7 @@ class VersusGameRepository:
         game_id: UUID,
         session_a_id: UUID,
         session_b_id: UUID,
-        grid: Grid,
+        grid: domain.Grid,
     ) -> data_models.VersusGame:
         """Construct a new versus game."""
 

@@ -3,18 +3,50 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from src import utils
 from src.versus_game.constants import (
     GAME_AUTO_END_SECS,
     GAME_DURATION_SECS,
-    GRID_TEMPLATES,
     POINTS_BY_LEN,
 )
 
 Grid = list[list[str | None]]
 GridTemplate = list[list[bool]]
+
+GridTemplateName = Literal["standard", "o", "x", "big"]
+
+GRID_TEMPLATES: dict[GridTemplateName, GridTemplate] = {
+    "standard": [
+        [True, True, True, True],
+        [True, True, True, True],
+        [True, True, True, True],
+        [True, True, True, True],
+    ],
+    "o": [
+        [False, True, True, True, False],
+        [True, True, True, True, True],
+        [True, True, False, True, True],
+        [True, True, True, True, True],
+        [False, True, True, True, False],
+    ],
+    "x": [
+        [True, True, False, True, True],
+        [True, True, True, True, True],
+        [False, True, True, True, False],
+        [True, True, True, True, True],
+        [True, True, False, True, True],
+    ],
+    "big": [
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+        [True, True, True, True, True],
+    ],
+}
 
 
 @dataclass(frozen=True)
