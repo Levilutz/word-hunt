@@ -123,7 +123,7 @@ async def match(
     if match.must_create_game:
         await versus_game_repository.create_versus_game(
             match.game_id,
-            match.other_session_id,
+            match.matched_player_session_id,
             session_id,
             random_template_and_grid(),
         )
@@ -167,8 +167,8 @@ async def get_game(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    sessions = game.get_oriented_sessions(session_id)
-    if sessions is None:
+    players = game.get_oriented_players(session_id)
+    if players is None:
         raise HTTPException(status_code=403)
 
     # Build resp
@@ -177,14 +177,14 @@ async def get_game(
         grid=game.grid,
         ended=game.ended(),
         this_player=GetGameRespPlayer(
-            seconds_remaining=sessions.this_session.play_secs_remaining(),
-            points=sessions.this_session.points(),
-            words=[word.word for word in sessions.this_session.submitted_words],
+            seconds_remaining=players.this_player.play_secs_remaining(),
+            points=players.this_player.points(),
+            words=[word.word for word in players.this_player.submitted_words],
         ),
         other_player=GetGameRespPlayer(
-            seconds_remaining=sessions.other_session.play_secs_remaining(),
-            points=sessions.other_session.points(),
-            words=[word.word for word in sessions.other_session.submitted_words],
+            seconds_remaining=players.other_player.play_secs_remaining(),
+            points=players.other_player.points(),
+            words=[word.word for word in players.other_player.submitted_words],
         ),
     )
 
@@ -202,8 +202,8 @@ async def game_start(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    sessions = game.get_oriented_sessions(session_id)
-    if sessions is None:
+    players = game.get_oriented_players(session_id)
+    if players is None:
         raise HTTPException(status_code=403)
 
     await versus_game_repository.update_versus_game_player_start(game_id, session_id)
@@ -231,12 +231,12 @@ async def game_submit_words(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    sessions = game.get_oriented_sessions(session_id)
-    if sessions is None:
+    players = game.get_oriented_players(session_id)
+    if players is None:
         raise HTTPException(status_code=403)
 
     # Determine if we're allowed to submit words
-    if not game.session_may_submit(session_id):
+    if not game.player_may_submit(session_id):
         raise HTTPException(status_code=400, detail="Submissions no longer accepted")
 
     # Extract words and validate
@@ -268,8 +268,8 @@ async def game_set_player_done(
         raise HTTPException(status_code=404)
 
     # Ensure this session is a participant in the game
-    sessions = game.get_oriented_sessions(session_id)
-    if sessions is None:
+    players = game.get_oriented_players(session_id)
+    if players is None:
         raise HTTPException(status_code=403)
 
     await versus_game_repository.update_versus_game_player_done(game_id, session_id)

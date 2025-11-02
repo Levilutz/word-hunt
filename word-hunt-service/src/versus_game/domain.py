@@ -73,7 +73,7 @@ class VersusGameSubmittedWord:
 
 
 @dataclass(frozen=True)
-class VersusGameSession:
+class VersusGamePlayer:
     session_id: UUID
     start: datetime | None
     done: bool
@@ -92,30 +92,30 @@ class VersusGameSession:
 
 
 @dataclass(frozen=True)
-class OrientedSessions:
-    """Sessions oriented as "this session" and "the other session", given context."""
+class OrientedPlayers:
+    """Players oriented as "this player" and "the other player", given context."""
 
-    this_session: VersusGameSession
-    other_session: VersusGameSession
+    this_player: VersusGamePlayer
+    other_player: VersusGamePlayer
 
 
 @dataclass(frozen=True)
 class VersusGame:
     game_id: UUID
     created_at: datetime
-    session_a: VersusGameSession
-    session_b: VersusGameSession
+    player_a: VersusGamePlayer
+    player_b: VersusGamePlayer
     grid: Grid
 
-    def get_oriented_sessions(self, session_id: UUID) -> OrientedSessions | None:
-        """Get a the sessions oriented by context."""
-        if session_id == self.session_a.session_id:
-            return OrientedSessions(
-                this_session=self.session_a, other_session=self.session_b
+    def get_oriented_players(self, session_id: UUID) -> OrientedPlayers | None:
+        """Get a the players oriented by context."""
+        if session_id == self.player_a.session_id:
+            return OrientedPlayers(
+                this_player=self.player_a, other_player=self.player_b
             )
-        if session_id == self.session_b.session_id:
-            return OrientedSessions(
-                this_session=self.session_b, other_session=self.session_a
+        if session_id == self.player_b.session_id:
+            return OrientedPlayers(
+                this_player=self.player_b, other_player=self.player_a
             )
         return None
 
@@ -123,8 +123,8 @@ class VersusGame:
         """How many seconds remain until the game auto-ends. 0 if over."""
         return max(GAME_AUTO_END_SECS - utils.elapsed_secs(self.created_at), 0)
 
-    def session_may_submit(self, session_id: UUID) -> bool:
-        """Whether the given session ID is permitted to submit again.
+    def player_may_submit(self, session_id: UUID) -> bool:
+        """Whether the player identified by the given sid is permitted to submit again.
 
         A client may submit words so long as:
         - the game's auto-end time has not passed
@@ -135,22 +135,22 @@ class VersusGame:
         if self.secs_to_auto_end() <= 0:
             return False
 
-        # Get which session this is, default to False if not found
-        sessions = self.get_oriented_sessions(session_id)
-        if sessions is None:
+        # Get which player this is, default to False if not found
+        players = self.get_oriented_players(session_id)
+        if players is None:
             return False
 
-        # The session may submit so long as it has not marked itself done
-        return not sessions.this_session.done
+        # The player may submit so long as it has not marked itself done
+        return not players.this_player.done
 
     def ended(self) -> bool:
-        """Whether the game is ended, per the user's viewpoint.
+        """Whether the game is ended, per the human user's viewpoint.
 
-        Note that sessions may still be able to submit, see `session_may_submit()`.
+        Note that user-agents may still be able to submit, see `player_may_submit()`.
         """
         return self.secs_to_auto_end() == 0 or (
-            self.session_a.play_secs_remaining()
-            == self.session_b.play_secs_remaining()
+            self.player_a.play_secs_remaining()
+            == self.player_b.play_secs_remaining()
             == 0
         )
 

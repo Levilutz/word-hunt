@@ -29,7 +29,7 @@ class VersusMatchQueueRepository:
             game_id, other_session_id = match_result
             return domain.VersusQueueMatch(
                 game_id=game_id,
-                other_session_id=other_session_id,
+                matched_player_session_id=other_session_id,
                 must_create_game=True,
             )
 
@@ -45,7 +45,7 @@ class VersusMatchQueueRepository:
                 game_id, other_session_id = check_result
                 return domain.VersusQueueMatch(
                     game_id=game_id,
-                    other_session_id=other_session_id,
+                    matched_player_session_id=other_session_id,
                     must_create_game=False,
                 )
             if expired:
@@ -59,7 +59,7 @@ class VersusMatchQueueRepository:
         """Join the versus queue. Returns queue entry id."""
 
         query = """
-        INSERT INTO versus_games_match_queue (id, session_id)
+        INSERT INTO versus_games_match_queue (id, queued_player_session_id)
         VALUES (%s, %s)
         """
         queue_entry_id = uuid4()
@@ -74,7 +74,7 @@ class VersusMatchQueueRepository:
     ) -> tuple[tuple[UUID, UUID] | None, bool]:
         """Check the status of an entry after joining the versus queue.
 
-        Returns ((game_id, other_session_id), expired).
+        Returns ((game_id, matched_player_session_id), expired).
         """
 
         # We let it roll for 20 seconds, even tho matching only covers first 15
@@ -85,7 +85,7 @@ class VersusMatchQueueRepository:
             AND join_time > NOW() - INTERVAL '20 second'
         """
         async with self._db_conn.cursor(
-            row_factory=class_row(data_models.VersusGamesMatchQueueItem)
+            row_factory=class_row(data_models.VersusGamesMatchQueueEntry)
         ) as cur:
             await cur.execute(query, (queue_entry_id,))
             result = await cur.fetchone()
@@ -93,44 +93,46 @@ class VersusMatchQueueRepository:
                 return None, True
             if result.game_id is None:
                 return None, False
-            if result.other_session_id is None:
-                raise ValueError(f"Missing other session id for game {result.game_id}")
-            return (result.game_id, result.other_session_id), False
+            if result.matched_player_session_id is None:
+                raise ValueError(
+                    f"Missing matched session id for game {result.game_id}"
+                )
+            return (result.game_id, result.matched_player_session_id), False
 
     async def _db_versus_queue_match(
         self, session_id: UUID
     ) -> tuple[UUID, UUID] | None:
         """Attempt to match with an existing session on the match queue.
 
-        Returns (game_id, other_session_id).
+        Returns (game_id, matched_player_session_id).
         """
 
         # We only accept conns from within 15 seconds, even tho polling goes for 20
         # Better to let them check too long vs match with someone concurrently expiring
         query = """
         UPDATE versus_games_match_queue
-        SET game_id = %s, other_session_id = %s, match_time = NOW()
-        WHERE session_id = (
-                SELECT session_id FROM versus_games_match_queue
+        SET game_id = %s, matched_player_session_id = %s, match_time = NOW()
+        WHERE queued_player_session_id = (
+                SELECT queued_player_session_id FROM versus_games_match_queue
                 WHERE join_time > NOW() - INTERVAL '15 second'
                     AND game_id IS NULL
-                    AND session_id != %s
+                    AND queued_player_session_id != %s
                 ORDER BY join_time ASC
                 LIMIT 1
                 FOR UPDATE
             )
             AND join_time > NOW() - INTERVAL '15 second'
             AND game_id IS NULL
-            AND session_id != %s
+            AND queued_player_session_id != %s
         RETURNING *
         """
 
         async with self._db_conn.cursor(
-            row_factory=class_row(data_models.VersusGamesMatchQueueItem)
+            row_factory=class_row(data_models.VersusGamesMatchQueueEntry)
         ) as cur:
             game_id = uuid4()
             await cur.execute(query, (game_id, session_id, session_id, session_id))
             result = await cur.fetchone()
             if result is None:
                 return None
-            return game_id, result.session_id
+            return game_id, result.queued_player_session_id

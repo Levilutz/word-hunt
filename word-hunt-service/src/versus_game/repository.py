@@ -17,12 +17,12 @@ class VersusGameRepository:
     async def create_versus_game(
         self,
         game_id: UUID,
-        session_a_id: UUID,
-        session_b_id: UUID,
+        player_a_session_id: UUID,
+        player_b_session_id: UUID,
         grid: domain.Grid,
     ) -> domain.VersusGame:
         db_game = await self._db_versus_game_construct(
-            game_id, session_a_id, session_b_id, grid
+            game_id, player_a_session_id, player_b_session_id, grid
         )
         return self._build_versus_game(db_game, [])
 
@@ -45,15 +45,15 @@ class VersusGameRepository:
         query = """
         UPDATE versus_games
         SET
-            session_a_start = (CASE
-                WHEN session_a_id = %s AND session_a_start IS NULL THEN NOW()
-                ELSE session_a_start
+            player_a_start = (CASE
+                WHEN player_a_session_id = %s AND player_a_start IS NULL THEN NOW()
+                ELSE player_a_start
             END),
-            session_b_start = (CASE
-                WHEN session_b_id = %s AND session_b_start IS NULL THEN NOW()
-                ELSE session_b_start
+            player_b_start = (CASE
+                WHEN player_b_session_id = %s AND player_b_start IS NULL THEN NOW()
+                ELSE player_b_start
             END)
-        WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
+        WHERE id = %s AND (player_a_session_id = %s OR player_b_session_id = %s)
         """
         await self._db_conn.execute(
             query,
@@ -67,15 +67,15 @@ class VersusGameRepository:
         query = """
         UPDATE versus_games
         SET
-            session_a_done = (CASE
-                WHEN session_a_id = %s THEN TRUE
-                ELSE session_a_done
+            player_a_done = (CASE
+                WHEN player_a_session_id = %s THEN TRUE
+                ELSE player_a_done
             END),
-            session_b_done = (CASE
-                WHEN session_b_id = %s THEN TRUE
-                ELSE session_b_done
+            player_b_done = (CASE
+                WHEN player_b_session_id = %s THEN TRUE
+                ELSE player_b_done
             END)
-        WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
+        WHERE id = %s AND (player_a_session_id = %s OR player_b_session_id = %s)
         """
         await self._db_conn.execute(
             query,
@@ -96,7 +96,7 @@ class VersusGameRepository:
             data_models.VersusGameSubmittedWord(
                 id=uuid4(),
                 game_id=game_id,
-                session_id=session_id,
+                by_session_id=session_id,
                 tile_path=[data_models.Point(x=pt.x, y=pt.y) for pt in path],
                 word=word,
             )
@@ -115,10 +115,10 @@ class VersusGameRepository:
         return domain.VersusGame(
             game_id=db_game.id,
             created_at=db_game.created_at,
-            session_a=domain.VersusGameSession(
-                session_id=db_game.session_a_id,
-                start=db_game.session_a_start,
-                done=db_game.session_a_done,
+            player_a=domain.VersusGamePlayer(
+                session_id=db_game.player_a_session_id,
+                start=db_game.player_a_start,
+                done=db_game.player_a_done,
                 submitted_words=domain.VersusGameSubmittedWord.dedup(
                     [
                         domain.VersusGameSubmittedWord(
@@ -129,14 +129,14 @@ class VersusGameRepository:
                             word=db_word.word,
                         )
                         for db_word in db_submitted_words
-                        if db_word.session_id == db_game.session_a_id
+                        if db_word.by_session_id == db_game.player_a_session_id
                     ]
                 ),
             ),
-            session_b=domain.VersusGameSession(
-                session_id=db_game.session_b_id,
-                start=db_game.session_b_start,
-                done=db_game.session_b_done,
+            player_b=domain.VersusGamePlayer(
+                session_id=db_game.player_b_session_id,
+                start=db_game.player_b_start,
+                done=db_game.player_b_done,
                 submitted_words=domain.VersusGameSubmittedWord.dedup(
                     [
                         domain.VersusGameSubmittedWord(
@@ -147,7 +147,7 @@ class VersusGameRepository:
                             word=db_word.word,
                         )
                         for db_word in db_submitted_words
-                        if db_word.session_id == db_game.session_b_id
+                        if db_word.by_session_id == db_game.player_b_session_id
                     ]
                 ),
             ),
@@ -157,14 +157,14 @@ class VersusGameRepository:
     async def _db_versus_game_construct(
         self,
         game_id: UUID,
-        session_a_id: UUID,
-        session_b_id: UUID,
+        player_a_session_id: UUID,
+        player_b_session_id: UUID,
         grid: domain.Grid,
     ) -> data_models.VersusGame:
         """Construct a new versus game."""
 
         query = """
-        INSERT INTO versus_games (id, session_a_id, session_b_id, grid)
+        INSERT INTO versus_games (id, player_a_session_id, player_b_session_id, grid)
         VALUES (%s, %s, %s, %s)
         RETURNING *
         """
@@ -175,8 +175,8 @@ class VersusGameRepository:
                 query,
                 (
                     game_id,
-                    session_a_id,
-                    session_b_id,
+                    player_a_session_id,
+                    player_b_session_id,
                     Jsonb(grid),
                 ),
             )
@@ -211,7 +211,7 @@ class VersusGameRepository:
     ) -> None:
         query = """
         INSERT INTO versus_game_submitted_words
-            (id, game_id, session_id, tile_path, word)
+            (id, game_id, by_session_id, tile_path, word)
         VALUES (%s, %s, %s, %s, %s)
         """
         async with self._db_conn.cursor() as cur:
@@ -221,7 +221,7 @@ class VersusGameRepository:
                     (
                         submitted_word.id,
                         submitted_word.game_id,
-                        submitted_word.session_id,
+                        submitted_word.by_session_id,
                         Jsonb(
                             [point.model_dump() for point in submitted_word.tile_path]
                         ),
