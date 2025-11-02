@@ -45,12 +45,14 @@ class VersusGameRepository:
         query = """
         UPDATE versus_games
         SET
-            session_a_start = CASE
+            session_a_start = (CASE
                 WHEN session_a_id = %s AND session_a_start IS NULL THEN NOW()
-                ELSE session_a_start,
-            session_b_start = CASE
+                ELSE session_a_start
+            END),
+            session_b_start = (CASE
                 WHEN session_b_id = %s AND session_b_start IS NULL THEN NOW()
                 ELSE session_b_start
+            END)
         WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
         """
         await self._db_conn.execute(
@@ -65,12 +67,14 @@ class VersusGameRepository:
         query = """
         UPDATE versus_games
         SET
-            session_a_done = CASE
+            session_a_done = (CASE
                 WHEN session_a_id = %s THEN TRUE
-                ELSE session_a_done,
-            session_b_done = CASE
+                ELSE session_a_done
+            END),
+            session_b_done = (CASE
                 WHEN session_b_id = %s THEN TRUE
                 ELSE session_b_done
+            END)
         WHERE id = %s AND (session_a_id = %s OR session_b_id = %s)
         """
         await self._db_conn.execute(
