@@ -63,7 +63,7 @@ async def get_db_conn() -> AsyncGenerator[AsyncConnection]:
         yield db_conn
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, root_path="/api")
 
 if ENVIRONMENT == "dev":
     app.add_middleware(
