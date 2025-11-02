@@ -239,6 +239,12 @@ async def game_submit_words(
     if not game.player_may_submit(session_id):
         raise HTTPException(status_code=400, detail="Submissions no longer accepted")
 
+    # An attempt to submit words qualifies as starting the game, even if words invalid
+    if players.this_player.start is None:
+        await versus_game_repository.update_versus_game_player_start(
+            game_id, session_id
+        )
+
     # Extract words and validate
     validated_words: list[tuple[str, list[VersusGamePoint]]] = []
     for i, req_path in enumerate(req.paths):
