@@ -85,9 +85,7 @@ class VersusGameSession:
             return None
         if self.done:
             return 0
-        return max(
-            GAME_DURATION_SECS - (datetime.now() - self.start).total_seconds(), 0
-        )
+        return max(GAME_DURATION_SECS - utils.elapsed_secs(self.start), 0)
 
     def points(self) -> int:
         return sum(word.points() for word in self.submitted_words)
@@ -123,16 +121,27 @@ class VersusGame:
 
     def secs_to_auto_end(self) -> float:
         """How many seconds remain until the game auto-ends. 0 if over."""
-        return max(
-            GAME_AUTO_END_SECS - (datetime.now() - self.created_at).total_seconds(), 0
-        )
+        return max(GAME_AUTO_END_SECS - utils.elapsed_secs(self.created_at), 0)
 
     def session_may_submit(self, session_id: UUID) -> bool:
-        """Whether the given session ID is permitted to submit again."""
-        if self.secs_to_auto_end() == 0:
+        """Whether the given session ID is permitted to submit again.
+
+        A client may submit words so long as:
+        - the game's auto-end time has not passed
+        - that client has not declared itself to be done
+        """
+
+        # Game auto-end time has passed, nobody may submit anymore
+        if self.secs_to_auto_end() <= 0:
             return False
+
+        # Get which session this is, default to False if not found
         sessions = self.get_oriented_sessions(session_id)
-        return (not sessions.this_session.done) if sessions is not None else False
+        if sessions is None:
+            return False
+
+        # The session may submit so long as it has not marked itself done
+        return not sessions.this_session.done
 
     def ended(self) -> bool:
         """Whether the game is ended, per the user's viewpoint.
