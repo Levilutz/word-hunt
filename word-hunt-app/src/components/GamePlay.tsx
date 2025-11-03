@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { ResponseError, type Point } from "@/clients/word-hunt-service";
+import { type Point, ResponseError } from "@/clients/word-hunt-service";
 import { client } from "@/clients/word-hunt-service-client-instance";
 import { extractWord } from "@/utils";
 
@@ -37,28 +37,23 @@ export default function GamePlay({ gameId }: { gameId: string }) {
 
   const { mutate: submitWordToBackendMutation } = useMutation({
     mutationFn: async (path: Point[]) => {
-      try {
-        await client.gameSubmitWordsGameGameIdSubmitWordsPost({
-          gameId,
-          submitWordsReq: { paths: [path] },
-        });
-      } catch (error) {
-        if (!(error instanceof ResponseError)) {
-          throw error;
-        }
-        if (error.response.status !== 400) {
-          throw error;
-        }
-        const body = (await error.response.json()) as {detail: string | undefined};
-        if (body?.detail == null || typeof body.detail !== "string") {
-          throw error;
-        }
-        throw new Error(body.detail);
-      }
+      await client.gameSubmitWordsGameGameIdSubmitWordsPost({
+        gameId,
+        submitWordsReq: { paths: [path] },
+      });
     },
     mutationKey: ["submit-word"],
     retry: (_numFailures: number, error: Error) => {
-      console.log(`retrying, error: ${error.message}`);
+      if (
+        error instanceof ResponseError &&
+        error.response.status >= 400 &&
+        error.response.status < 500
+      ) {
+        console.log(
+          `Failed to submit word, server returned ${error.response.status}`,
+        );
+        return false;
+      }
       return true;
     },
     retryDelay: (attempt: number) => Math.min(2 ** attempt * 1000, 10000),
