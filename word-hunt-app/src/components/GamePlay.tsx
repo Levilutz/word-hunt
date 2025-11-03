@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import type { Point } from "@/clients/word-hunt-service";
+import { ResponseError, type Point } from "@/clients/word-hunt-service";
 import { client } from "@/clients/word-hunt-service-client-instance";
 import { extractWord } from "@/utils";
 
@@ -37,14 +37,28 @@ export default function GamePlay({ gameId }: { gameId: string }) {
 
   const { mutate: submitWordToBackendMutation } = useMutation({
     mutationFn: async (path: Point[]) => {
-      await client.gameSubmitWordsGameGameIdSubmitWordsPost({
-        gameId,
-        submitWordsReq: { paths: [path] },
-      });
+      try {
+        await client.gameSubmitWordsGameGameIdSubmitWordsPost({
+          gameId,
+          submitWordsReq: { paths: [path] },
+        });
+      } catch (error) {
+        if (!(error instanceof ResponseError)) {
+          throw error;
+        }
+        if (error.response.status !== 400) {
+          throw error;
+        }
+        const body = (await error.response.json()) as {detail: string | undefined};
+        if (body?.detail == null || typeof body.detail !== "string") {
+          throw error;
+        }
+        throw new Error(body.detail);
+      }
     },
     mutationKey: ["submit-word"],
     retry: (_numFailures: number, error: Error) => {
-      console.log(`retrying, error: ${error}`);
+      console.log(`retrying, error: ${error.message}`);
       return true;
     },
     retryDelay: (attempt: number) => Math.min(2 ** attempt * 1000, 10000),
