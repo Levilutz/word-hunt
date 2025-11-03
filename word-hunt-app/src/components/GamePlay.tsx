@@ -1,7 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
+import type { Point } from "@/clients/word-hunt-service";
 import { client } from "@/clients/word-hunt-service-client-instance";
 import { extractWord } from "@/utils";
+
+const DUMMY_PATH = [
+  { x: 1, y: 1 },
+  { x: 2, y: 2 },
+  { x: 2, y: 1 },
+];
 
 export default function GamePlay({ gameId }: { gameId: string }) {
   console.log("Rendering play");
@@ -28,18 +35,27 @@ export default function GamePlay({ gameId }: { gameId: string }) {
     setCurPoints(100 * curWords.size);
   }, [curWords]);
 
+  const { mutate: submitWordToBackendMutation } = useMutation({
+    mutationFn: async (path: Point[]) => {
+      await client.gameSubmitWordsGameGameIdSubmitWordsPost({
+        gameId,
+        submitWordsReq: { paths: [path] },
+      });
+    },
+    mutationKey: ["submit-word"],
+    retry: (_numFailures: number, error: Error) => {
+      console.log(`retrying, error: ${error}`);
+      return true;
+    },
+    retryDelay: (attempt: number) => Math.min(2 ** attempt * 1000, 10000),
+  });
+
   const onSubmitWord = useCallback(
-    (path: { x: number; y: number }[]) => {
-      if (data == null) {
-        return;
-      }
-      const word = extractWord(data.grid, path);
-      if (word == null) {
-        return;
-      }
+    (word: string, path: { x: number; y: number }[]) => {
+      submitWordToBackendMutation(path);
       setCurWords((prev) => new Set([...prev, word]));
     },
-    [data],
+    [submitWordToBackendMutation],
   );
 
   if (isPending || error != null) {
@@ -56,11 +72,7 @@ export default function GamePlay({ gameId }: { gameId: string }) {
       <button
         type="button"
         onClick={() =>
-          onSubmitWord([
-            { x: 1, y: 1 },
-            { x: 2, y: 2 },
-            { x: 2, y: 1 },
-          ])
+          onSubmitWord(extractWord(data.grid, DUMMY_PATH) ?? "", DUMMY_PATH)
         }
       >
         Click me!
